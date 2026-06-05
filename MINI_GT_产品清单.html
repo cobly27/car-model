@@ -94,6 +94,20 @@ body {
     font-weight: 600;
 }
 .btn-clean-export:hover { opacity: .85; }
+.btn-sync {
+    background: #3498db !important;
+    color: #fff !important;
+    border: none !important;
+    cursor: pointer;
+    transition: opacity .2s;
+    font-weight: 600;
+    animation: pulse-sync 2s infinite;
+}
+.btn-sync:hover { opacity: .85; animation: none; }
+@keyframes pulse-sync {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(52,152,219,.4); }
+    50% { box-shadow: 0 0 0 6px rgba(52,152,219,0); }
+}
 
 .table-wrap { overflow-x: auto; }
 table { width: 100%; table-layout: fixed; border-collapse: collapse; background: var(--card); min-width: 700px; }
@@ -590,6 +604,7 @@ tr:hover .copy-name-btn { opacity: .6; }
     </select>
     <button class="btn-export" onclick="exportCSV()" title="导出为 CSV 文件">📥 导出 CSV</button>
     <button class="btn-clean-export" onclick="exportCleanHTML()" title="导出已永久删除行被物理移除的 HTML 文件">📦 导出清理版</button>
+    <button class="btn-sync" onclick="openSyncPanel()" title="从官网同步最新产品数据">🔄 同步更新</button>
     <select id="pageSize" onchange="changePageSize()" title="每页显示条数">
         <option value="50" selected>每页 50 条</option>
         <option value="100">每页 100 条</option>
@@ -17739,6 +17754,29 @@ function restoreAll() {
     setTimeout(function(){ location.reload(); }, 600);
 }
 
+// ── Sync Panel ──
+function openSyncPanel() {
+    // Update current count
+    var visible = getVisibleRows ? getVisibleRows().length : document.querySelectorAll('tbody tr').length;
+    document.getElementById('syncCurrentCount').textContent = visible;
+    document.getElementById('syncOverlay').classList.add('active');
+}
+function closeSyncPanel() {
+    document.getElementById('syncOverlay').classList.remove('active');
+}
+function copySyncCmd() {
+    var cmd = (document.getElementById('syncCmd') || {}).textContent || 'cd /Users/cobly/Desktop/AI编程 && python3 update_minigt.py';
+    navigator.clipboard.writeText(cmd).then(function() {
+        showToast('✅ 已复制更新指令，请在终端中粘贴运行');
+    }).catch(function() {
+        showToast('⚠️ 复制失败，请手动复制指令');
+    });
+}
+// Click overlay to close
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'syncOverlay') closeSyncPanel();
+});
+
 
 </script>
 
@@ -17782,5 +17820,31 @@ function restoreAll() {
         </div>
     </div>
 </div>
+
+<!-- ── Sync Modal ── -->
+<div class="dm-overlay" id="syncOverlay">
+    <div class="dm-box" style="max-width:480px;">
+        <div class="dm-header">
+            <h3>🔄 同步 MINI GT 产品数据</h3>
+            <button class="dm-close" onclick="closeSyncPanel()">✕</button>
+        </div>
+        <div class="dm-body" style="overflow:visible;">
+            <div style="background:#f0f7ff;border-radius:10px;padding:16px;margin-bottom:16px;">
+                <p style="margin:0 0 8px;font-size:13px;color:#555;">📊 <strong>当前清单</strong>：<span id="syncCurrentCount">1033</span> 款产品</p>
+                <p style="margin:0;font-size:13px;color:#555;">🌐 <strong>数据来源</strong>：<a href="https://minigt.tsm-models.com/index.php?action=product-list&b_id=13" target="_blank" style="color:#3498db;">minigt.tsm-models.com</a></p>
+            </div>
+            <p style="font-size:13px;color:#666;margin:0 0 12px;">点击下方按钮复制更新指令，在终端中运行即可自动抓取新品并更新本页面：</p>
+            <div style="background:#1a1a2e;border-radius:10px;padding:14px 16px;margin-bottom:12px;font-family:'SF Mono',Monaco,monospace;font-size:12px;color:#a0ffa0;word-break:break-all;" id="syncCmd">cd /Users/cobly/Desktop/AI编程 && python3 update_minigt.py</div>
+            <button class="btn-restore-all" onclick="copySyncCmd()" style="width:100%;padding:12px;font-size:14px;display:block;margin-bottom:8px;">
+                📋 复制更新指令
+            </button>
+            <button onclick="closeSyncPanel()" style="width:100%;padding:10px;background:#f0f0f0;border:1px solid #d0d0d0;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;">
+                关闭
+            </button>
+            <p style="margin:10px 0 0;font-size:11px;color:#999;text-align:center;">运行脚本后刷新此页面即可看到新产品</p>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
