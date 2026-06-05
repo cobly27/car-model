@@ -513,6 +513,9 @@ tr:hover .copy-name-btn { opacity: .6; }
         <span class="stat-badge preorder">📦 165</span>
         <span class="stat-badge soldout">❌ 0</span>
     </div>
+    <span class="restore-hint" id="restoreHint" style="display:none; font-size:12px; color:#e74c3c; margin-left:12px;">
+        已删除 <span class="restore-count">0</span> 条 · <a href="javascript:void(0)" onclick="restoreDeleted()" style="color:#e74c3c; text-decoration:underline;">恢复</a>
+    </span>
 </div>
 
 <!-- Table -->
@@ -17358,7 +17361,44 @@ function exportCSV() {
 renderPagination();
 
 
-// ── Delete functions ──
+// ── Delete functions (with localStorage persistence) ──
+var DELETED_KEY = 'minigt_deleted_skus';
+
+function getDeletedSet() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem(DELETED_KEY)) || []);
+    } catch(e) { return new Set(); }
+}
+function saveDeletedSet(set) {
+    localStorage.setItem(DELETED_KEY, JSON.stringify(Array.from(set)));
+}
+
+// On page load: remove rows whose SKU is in deleted set
+(function(){
+    var deleted = getDeletedSet();
+    if (deleted.size === 0) return;
+    var removed = 0;
+    document.querySelectorAll('tbody tr[data-sku]').forEach(function(tr) {
+        if (deleted.has(tr.dataset.sku)) {
+            tr.remove();
+            removed++;
+        }
+    });
+    if (removed > 0) {
+        // Update header count
+        setTimeout(function() {
+            var total = document.querySelectorAll('tbody tr').length;
+            var hp = document.querySelector('.header p');
+            if (hp) hp.innerHTML = hp.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
+            // Show restore hint
+            var hint = document.getElementById('restoreHint');
+            if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = deleted.size; }
+            // Re-render pagination
+            filterTable();
+        }, 100);
+    }
+})();
+
 function updateDeleteBtn() {
     var n = document.querySelectorAll('.row-check:checked').length;
     document.getElementById('btnDelete').disabled = (n === 0);
@@ -17395,25 +17435,48 @@ function closeConfirm() {
 }
 function doDelete() {
     closeConfirm();
-    var checked = document.querySelectorAll('.row-check:checked');
-    var deleted = 0;
-    checked.forEach(function(cb) {
-        var tr = cb.closest('tr');
-        if (tr) {
-            tr.remove();
-            deleted++;
-        }
-    });
-    // Update total count in header
-    var total = document.querySelectorAll('tbody tr').length;
-    var headerP = document.querySelector('.header p');
-    headerP.innerHTML = headerP.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
-    // Reset checkAll
-    document.getElementById('checkAll').checked = false;
-    updateDeleteBtn();
-    // Re-filter to refresh pagination
-    filterTable();
-    showToast('已删除 ' + deleted + ' 条记录');
+    // Branch: single row delete (window._deleteTr is set) or batch delete
+    if (window._deleteTr) {
+        // Single delete
+        var tr = window._deleteTr;
+        var name = tr.dataset.name || '未知';
+        var sku = tr.dataset.sku || '';
+        var deletedSet = getDeletedSet();
+        if (sku) deletedSet.add(sku);
+        saveDeletedSet(deletedSet);
+        tr.remove();
+        window._deleteTr = null;
+        var total = document.querySelectorAll('tbody tr').length;
+        var headerP = document.querySelector('.header p');
+        headerP.innerHTML = headerP.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
+        var hint = document.getElementById('restoreHint');
+        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = deletedSet.size; }
+        filterTable();
+        showToast('已删除：' + name + '（刷新后仍会隐藏）');
+    } else {
+        // Batch delete
+        var checked = document.querySelectorAll('.row-check:checked');
+        var deleted = 0;
+        var deletedSet = getDeletedSet();
+        checked.forEach(function(cb) {
+            var tr2 = cb.closest('tr');
+            if (tr2) {
+                deletedSet.add(tr2.dataset.sku);
+                tr2.remove();
+                deleted++;
+            }
+        });
+        saveDeletedSet(deletedSet);
+        var total = document.querySelectorAll('tbody tr').length;
+        var headerP = document.querySelector('.header p');
+        headerP.innerHTML = headerP.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
+        document.getElementById('checkAll').checked = false;
+        updateDeleteBtn();
+        var hint = document.getElementById('restoreHint');
+        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = deletedSet.size; }
+        filterTable();
+        showToast('已删除 ' + deleted + ' 条记录（刷新后仍会隐藏）');
+    }
 }
 
 // Single row delete (called from row)
@@ -17423,34 +17486,22 @@ function deleteRow(btn) {
     var name = tr.dataset.name || '未知';
     document.getElementById('confirmMsg').innerHTML = '确定要删除产品「<b>' + name + '</b>」吗？此操作不可撤销。';
     document.getElementById('confirmOverlay').classList.add('active');
-    // Save tr reference for doSingleDelete
+    // window._deleteTr 标记当前为单行删除模式
     window._deleteTr = tr;
 }
-function doSingleDelete() {
-    if (!window._deleteTr) return;
-    var tr = window._deleteTr;
-    var name = tr.dataset.name || '未知';
-    tr.remove();
-    window._deleteTr = null;
-    closeConfirm();
-    var total = document.querySelectorAll('tbody tr').length;
-    var headerP = document.querySelector('.header p');
-    headerP.innerHTML = headerP.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
-    filterTable();
-    showToast('已删除：' + name);
+
+// ── Restore / Clear ──
+function restoreDeleted() {
+    localStorage.removeItem(DELETED_KEY);
+    showToast('已恢复所有删除记录，正在刷新...');
+    setTimeout(function(){ location.reload(); }, 600);
 }
-// Patch: replace doDelete with a version that handles both batch and single
-// Actually, let's just override doDelete to check window._deleteTr
-(function(){
-    var origDoDelete = window.doDelete;
-    window.doDelete = function() {
-        if (window._deleteTr) {
-            doSingleDelete();
-        } else {
-            origDoDelete();
-        }
-    };
-})();
+function clearDeleted() {
+    localStorage.removeItem(DELETED_KEY);
+    var hint = document.getElementById('restoreHint');
+    if (hint) hint.style.display = 'none';
+    showToast('已清除删除记录');
+}
 
 </script>
 
