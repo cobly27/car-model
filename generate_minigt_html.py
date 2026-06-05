@@ -28,24 +28,24 @@ def status_class(s):
     m = {'Pre-Order': 'status-preorder', 'Released': 'status-released', 'Sold Out': 'status-soldout'}
     return m.get(s, '')
 
-def product_url(sku):
-    """生成官网产品详情链接"""
-    return f'https://minigt.tsm-models.com/index.php?action=product-detail&id={esc(sku)}'
+def product_url(detail_id):
+    """生成官网产品详情链接（使用数字ID而非SKU）"""
+    return f'https://minigt.tsm-models.com/index.php?action=product-detail&id={detail_id}'
 
 rows_html = ''
 for i, p in enumerate(products):
     name = esc(p['name'])
     sku = esc(p['sku'])
     img = esc(p['image'])
+    pid = p.get('detail_id', '')
     st = p.get('status', '')
     sc = status_class(st)
-    pn = p.get('page_num', '')
     rows_html += f'''
         <tr data-sku="{sku}" data-name="{name}" data-status="{st}">
             <td class="num">{i+1}</td>
             <td class="sku" title="点击复制编号" onclick="copySKU('{sku}', this)">{sku}</td>
             <td class="name-cell">
-                <a href="{product_url(sku)}" target="_blank" rel="noopener" title="在官网查看详情">{name}</a>
+                <a href="{product_url(pid)}" target="_blank" rel="noopener" title="在官网查看详情">{name}</a>
                 <button class="copy-name-btn" onclick="copyText('{name}', this)" title="复制名称">📋</button>
             </td>
             <td class="status-cell"><span class="badge {sc}">{st}</span></td>
