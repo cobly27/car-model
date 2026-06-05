@@ -17540,26 +17540,32 @@ function saveDeletedData(data) {
 })();
 
 // On page load: remove rows whose SKU is in deleted or permanentDeleted, then show body
+// Sync-aware: if a permanentDeleted SKU's row exists in DOM, sync brought it back — clear from permanentDeleted instead of removing
 (function(){
     var data = getDeletedData();
-    var allSkus = new Set();
-    data.deleted.forEach(function(d) { allSkus.add(d.sku); });
-    data.permanentDeleted.forEach(function(s) { allSkus.add(s); });
-    var removed = 0;
+    var delSet = new Set();
+    data.deleted.forEach(function(d) { delSet.add(d.sku); });
+    var removed = 0, cleaned = false;
     document.querySelectorAll('tbody tr[data-sku]').forEach(function(tr) {
-        if (allSkus.has(tr.dataset.sku)) {
+        var sku = tr.dataset.sku;
+        if (data.permanentDeleted.has(sku)) {
+            // Row exists in source — sync brought it back. Clear from permanentDeleted, keep the row.
+            data.permanentDeleted.delete(sku);
+            cleaned = true;
+        } else if (delSet.has(sku)) {
             tr.remove();
             removed++;
         }
     });
+    if (cleaned) saveDeletedData(data);
     // Update header count and restore hint (sync, before body becomes visible)
     var total = document.querySelectorAll('tbody tr').length;
     var hp = document.querySelector('.header p');
     if (hp) hp.innerHTML = hp.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
     var hint = document.getElementById('restoreHint');
-    if (hint && (data.deleted.length > 0 || data.permanentDeleted.length > 0)) {
+    if (hint && (data.deleted.length > 0 || data.permanentDeleted.size > 0)) {
         hint.style.display = 'inline';
-        hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.length;
+        hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.size;
     }
     filterTable();
     // Body is now ready — make it visible
@@ -17626,7 +17632,7 @@ function doDelete() {
         var headerP = document.querySelector('.header p');
         headerP.innerHTML = headerP.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
         var hint = document.getElementById('restoreHint');
-        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.length; }
+        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.size; }
         filterTable();
         showToast('已删除：' + name + '（刷新后仍会隐藏）');
     } else {
@@ -17649,7 +17655,7 @@ function doDelete() {
         document.getElementById('checkAll').checked = false;
         updateDeleteBtn();
         var hint = document.getElementById('restoreHint');
-        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.length; }
+        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.size; }
         filterTable();
         showToast('已删除 ' + deleted + ' 条记录（刷新后仍会隐藏）');
     }
@@ -17669,7 +17675,7 @@ function deleteRow(btn) {
 // ── Deleted Manager ──
 function openDeletedManager() {
     var data = getDeletedData();
-    var total = data.deleted.length + data.permanentDeleted.length;
+    var total = data.deleted.length + data.permanentDeleted.size;
     if (total === 0) { showToast('没有已删除的记录'); return; }
 
     var tbody = document.getElementById('dmTableBody');
@@ -17713,7 +17719,7 @@ function restoreSingle(idx) {
     if (idx < 0 || idx >= data.deleted.length) return;
     data.deleted.splice(idx, 1);
     saveDeletedData(data);
-    var totalAfter = data.deleted.length + data.permanentDeleted.length;
+    var totalAfter = data.deleted.length + data.permanentDeleted.size;
     var hint = document.getElementById('restoreHint');
     if (hint) {
         if (totalAfter === 0) { hint.style.display = 'none'; }
@@ -17730,7 +17736,7 @@ function permanentDelete(idx) {
     data.permanentDeleted.add(item.sku);
     data.deleted.splice(idx, 1);
     saveDeletedData(data);
-    var totalAfter = data.deleted.length + data.permanentDeleted.length;
+    var totalAfter = data.deleted.length + data.permanentDeleted.size;
     var hint = document.getElementById('restoreHint');
     if (hint) {
         if (totalAfter === 0) { hint.style.display = 'none'; }
@@ -17740,12 +17746,12 @@ function permanentDelete(idx) {
 }
 function restoreAll() {
     var data = getDeletedData();
-    if (data.deleted.length === 0 && data.permanentDeleted.length === 0) {
+    if (data.deleted.length === 0 && data.permanentDeleted.size === 0) {
         showToast('没有可恢复的记录');
         return;
     }
-    if (data.permanentDeleted.length > 0) {
-        if (!confirm('将恢复 ' + data.deleted.length + ' 条记录（' + data.permanentDeleted.length + ' 条永久删除的不会恢复）。\n确定？')) return;
+    if (data.permanentDeleted.size > 0) {
+        if (!confirm('将恢复 ' + data.deleted.length + ' 条记录（' + data.permanentDeleted.size + ' 条永久删除的不会恢复）。\n确定？')) return;
     }
     data.deleted = [];
     saveDeletedData(data);
@@ -17841,7 +17847,7 @@ document.addEventListener('click', function(e) {
             <button onclick="closeSyncPanel()" style="width:100%;padding:10px;background:#f0f0f0;border:1px solid #d0d0d0;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;">
                 关闭
             </button>
-            <p style="margin:10px 0 0;font-size:11px;color:#999;text-align:center;">运行脚本后刷新此页面即可看到新产品</p>
+            <p style="margin:10px 0 0;font-size:11px;color:#999;text-align:center;">运行脚本后刷新页面即可看到新产品。之前永久删除的产品若重新出现也会自动恢复显示。</p>
         </div>
     </div>
 </div>

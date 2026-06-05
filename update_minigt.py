@@ -418,6 +418,7 @@ def main():
     print(f"\n✏️ 正在更新 HTML...")
     if insert_into_html(results):
         print(f"\n🎉 更新完成！新增 {len(new_products)} 款，刷新页面即可查看。")
+        print("💡 提示：如果你之前「永久删除」过某些产品，同步后它们会自动恢复显示（localStorage 的 permanentDeleted 记录会被自动清除）。")
         return len(new_products)
     else:
         print("\n❌ 更新失败")
