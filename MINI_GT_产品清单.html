@@ -17496,12 +17496,7 @@ function restoreDeleted() {
     showToast('已恢复所有删除记录，正在刷新...');
     setTimeout(function(){ location.reload(); }, 600);
 }
-function clearDeleted() {
-    localStorage.removeItem(DELETED_KEY);
-    var hint = document.getElementById('restoreHint');
-    if (hint) hint.style.display = 'none';
-    showToast('已清除删除记录');
-}
+
 
 </script>
 
