@@ -17566,7 +17566,7 @@ function doDelete() {
         var headerP = document.querySelector('.header p');
         headerP.innerHTML = headerP.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
         var hint = document.getElementById('restoreHint');
-        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.size; }
+        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.length; }
         filterTable();
         showToast('已删除：' + name + '（刷新后仍会隐藏）');
     } else {
@@ -17589,7 +17589,7 @@ function doDelete() {
         document.getElementById('checkAll').checked = false;
         updateDeleteBtn();
         var hint = document.getElementById('restoreHint');
-        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.size; }
+        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.length; }
         filterTable();
         showToast('已删除 ' + deleted + ' 条记录（刷新后仍会隐藏）');
     }
@@ -17609,7 +17609,7 @@ function deleteRow(btn) {
 // ── Deleted Manager ──
 function openDeletedManager() {
     var data = getDeletedData();
-    var total = data.deleted.length + data.permanentDeleted.size;
+    var total = data.deleted.length + data.permanentDeleted.length;
     if (total === 0) { showToast('没有已删除的记录'); return; }
 
     var tbody = document.getElementById('dmTableBody');
@@ -17653,7 +17653,7 @@ function restoreSingle(idx) {
     if (idx < 0 || idx >= data.deleted.length) return;
     data.deleted.splice(idx, 1);
     saveDeletedData(data);
-    var totalAfter = data.deleted.length + data.permanentDeleted.size;
+    var totalAfter = data.deleted.length + data.permanentDeleted.length;
     var hint = document.getElementById('restoreHint');
     if (hint) {
         if (totalAfter === 0) { hint.style.display = 'none'; }
@@ -17670,7 +17670,7 @@ function permanentDelete(idx) {
     data.permanentDeleted.add(item.sku);
     data.deleted.splice(idx, 1);
     saveDeletedData(data);
-    var totalAfter = data.deleted.length + data.permanentDeleted.size;
+    var totalAfter = data.deleted.length + data.permanentDeleted.length;
     var hint = document.getElementById('restoreHint');
     if (hint) {
         if (totalAfter === 0) { hint.style.display = 'none'; }
@@ -17680,12 +17680,12 @@ function permanentDelete(idx) {
 }
 function restoreAll() {
     var data = getDeletedData();
-    if (data.deleted.length === 0 && data.permanentDeleted.size === 0) {
+    if (data.deleted.length === 0 && data.permanentDeleted.length === 0) {
         showToast('没有可恢复的记录');
         return;
     }
-    if (data.permanentDeleted.size > 0) {
-        if (!confirm('将恢复 ' + data.deleted.length + ' 条记录（' + data.permanentDeleted.size + ' 条永久删除的不会恢复）。\n确定？')) return;
+    if (data.permanentDeleted.length > 0) {
+        if (!confirm('将恢复 ' + data.deleted.length + ' 条记录（' + data.permanentDeleted.length + ' 条永久删除的不会恢复）。\n确定？')) return;
     }
     data.deleted = [];
     saveDeletedData(data);
