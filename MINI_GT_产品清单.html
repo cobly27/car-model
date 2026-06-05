@@ -576,7 +576,7 @@ tr:hover .copy-name-btn { opacity: .6; }
 <!-- Header -->
 <div class="header">
     <h1>🏎️ MINI GT 全产品清单</h1>
-    <p>数据来源: <a href="https://minigt.tsm-models.com/index.php?action=product-list&b_id=13" target="_blank" rel="noopener">minigt.tsm-models.com</a> · 抓取时间: 2026-06-05 · 共 1034 款产品 · 每款显示3张产品图</p>
+    <p>数据来源: <a href="https://minigt.tsm-models.com/index.php?action=product-list&b_id=13" target="_blank" rel="noopener">minigt.tsm-models.com</a> · 抓取时间: 2026-06-05 · 共 1033 款产品 · 每款显示3张产品图</p>
 </div>
 
 <!-- Controls -->
@@ -597,9 +597,9 @@ tr:hover .copy-name-btn { opacity: .6; }
     </select>
     <button class="btn-delete" id="btnDelete" onclick="confirmDelete()" disabled>🗑️ 删除选中</button>
     <div class="stats-group" id="statsGroup">
-        <span class="stat-badge all">全部 1034</span>
+        <span class="stat-badge all">全部 1033</span>
         <span class="stat-badge released">✅ 869</span>
-        <span class="stat-badge preorder">📦 165</span>
+        <span class="stat-badge preorder">📦 164</span>
         <span class="stat-badge soldout">❌ 0</span>
     </div>
     <span class="restore-hint" id="restoreHint" style="display:none; font-size:12px; color:#e74c3c; margin-left:12px;">
@@ -621,22 +621,6 @@ tr:hover .copy-name-btn { opacity: .6; }
 </tr>
 </thead>
 <tbody>
-
-        <tr data-sku="MGT01312" data-name="Range Rover 1981 Camel Trophy Sumatra H.Fischer &amp; W.Bays" data-status="Pre-Order">
-            <td class="td-check"><input type="checkbox" class="row-check" data-sku="MGT01312"></td>
-            <td class="sku" title="点击复制编号" onclick="copySKU('MGT01312', this)">MGT01312</td>
-            <td class="name-cell">
-                <a href="https://minigt.tsm-models.com/index.php?action=product-detail&id=2250" target="_blank" rel="noopener" title="在官网查看详情">Range Rover 1981 Camel Trophy Sumatra H.Fischer &amp; W.Bays</a>
-                <button class="copy-name-btn" onclick="copyText('Range Rover 1981 Camel Trophy Sumatra H.Fischer &amp; W.Bays', this)" title="复制名称">📋</button>
-            </td>
-            <td class="status-cell"><span class="badge status-preorder">Pre-Order</span></td>
-            <td class="img-cell">
-                <div class="img-triplet" onclick="openModalTriplet([&quot;https://minigt.tsm-models.com/upload/picfile/2026/06/20260601002532345.JPG&quot;, &quot;https://minigt.tsm-models.com/upload/picfile_list/c754287cd14e146c879245c48e4e054d20260601002707263.JPG&quot;, &quot;https://minigt.tsm-models.com/upload/picfile_list/a10b7859e86ad985644f2b06bf45dbbd20260601002707265.JPG&quot;], 0, 'Range Rover 1981 Camel Trophy Sumatra H.Fischer &amp; W.Bays')">
-                    <img src="https://minigt.tsm-models.com/upload/picfile/2026/06/20260601002532345.JPG" loading="lazy" alt="Range Rover 1981 Camel Trophy Sumatra H.Fischer &amp; W.Bays" onerror="this.style.display='none'"><img src="https://minigt.tsm-models.com/upload/picfile_list/c754287cd14e146c879245c48e4e054d20260601002707263.JPG" loading="lazy" alt="Range Rover 1981 Camel Trophy Sumatra H.Fischer &amp; W.Bays" onerror="this.style.display='none'"><img src="https://minigt.tsm-models.com/upload/picfile_list/a10b7859e86ad985644f2b06bf45dbbd20260601002707265.JPG" loading="lazy" alt="Range Rover 1981 Camel Trophy Sumatra H.Fischer &amp; W.Bays" onerror="this.style.display='none'">
-                </div>
-            </td>
-        <td class="td-action"><button class="row-del-btn" onclick="deleteRow(this)" title="删除此行">×</button></td>
-        </tr>
 
         <tr data-sku="MGT01311" data-name="Range Rover 1981 Camel Trophy Sumatra N.Sudmann &amp; F.Hofmann" data-status="Pre-Order">
             <td class="td-check"><input type="checkbox" class="row-check" data-sku="MGT01311"></td>
@@ -17315,7 +17299,7 @@ function filterTable() {
         }
     });
     document.getElementById('statsGroup').innerHTML =
-        '<span class="stat-badge all">显示 ' + count + ' / 共 1034 款</span>' +
+        '<span class="stat-badge all">显示 ' + count + ' / 共 1033 款</span>' +
         '<span class="stat-badge released">✅ ' + counts['Released'] + '</span>' +
         '<span class="stat-badge preorder">📦 ' + counts['Pre-Order'] + '</span>' +
         '<span class="stat-badge soldout">❌ ' + counts['Sold Out'] + '</span>';
