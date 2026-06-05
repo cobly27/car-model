@@ -401,6 +401,12 @@ tr:hover .copy-name-btn { opacity: .6; }
     .pagination-wrap { padding: 10px 12px; gap: 4px; }
     .pagination-wrap button { min-width: 30px; height: 30px; font-size: 11px; padding: 0 6px; }
     .pagination-wrap .page-size-select { font-size: 11px; padding: 6px 10px; margin-left: 8px; }
+    .dm-box { max-width: 98vw; padding: 20px 16px 18px; }
+    .dm-table { font-size: 11px; }
+    .dm-table .dm-name { max-width: 120px; }
+    .dm-table .dm-sku { width: 80px; font-size: 10px; }
+    .dm-btn { padding: 3px 6px; font-size: 10px; }
+    .dm-footer-btns button { padding: 6px 14px; font-size: 11px; }
 }
 
 /* ── Checkbox / Delete ── */
@@ -458,6 +464,77 @@ tr:hover .copy-name-btn { opacity: .6; }
 .confirm-btns .btn-confirm { background:#e74c3c; color:#fff; border-color:#e74c3c; }
 .confirm-btns .btn-confirm:hover { background:#c0392b; }
 
+/* ── Deleted Manager Modal ── */
+.dm-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 21000;
+    align-items: center; justify-content: center;
+}
+.dm-overlay.active { display: flex; }
+.dm-box {
+    background: #fff; border-radius: 16px; padding: 28px 30px 24px;
+    max-width: 640px; width: 92vw; max-height: 80vh;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    animation: confirmIn .2s ease;
+    display: flex; flex-direction: column;
+}
+.dm-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+}
+.dm-header h3 { margin: 0; font-size: 16px; color: #1a1a1a; }
+.dm-close {
+    background: none; border: none; font-size: 22px; color: #999;
+    cursor: pointer; padding: 0 4px; line-height: 1;
+}
+.dm-close:hover { color: #333; }
+.dm-body {
+    overflow-y: auto; flex: 1; min-height: 0;
+    margin: 0 -12px; padding: 0 12px;
+}
+.dm-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.dm-table th {
+    text-align: left; padding: 8px 8px; border-bottom: 2px solid #e0e0e0;
+    color: #999; font-weight: 600; font-size: 11px; white-space: nowrap;
+}
+.dm-table td {
+    padding: 8px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle;
+}
+.dm-table .dm-img { width: 48px; }
+.dm-table .dm-img img {
+    width: 44px; height: 33px; object-fit: cover; border-radius: 4px;
+    border: 1px solid #eee;
+}
+.dm-table .dm-sku { width: 120px; color: #888; font-size: 12px; }
+.dm-table .dm-name { max-width: 220px; word-break: break-word; }
+.dm-table .dm-actions { width: 100px; text-align: right; white-space: nowrap; }
+.dm-btn {
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    font-family: inherit; border: 1px solid #d0d0d0; margin-left: 4px;
+    transition: all .15s;
+}
+.dm-btn-restore { background: #27ae60; color: #fff; border-color: #27ae60; }
+.dm-btn-restore:hover { background: #219a52; }
+.dm-btn-perm { background: #fff; color: #e74c3c; border-color: #e74c3c; }
+.dm-btn-perm:hover { background: #fff5f5; }
+.dm-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 16px; padding-top: 12px; border-top: 1px solid #f0f0f0;
+}
+.dm-footer .dm-empty { color: #999; font-size: 13px; }
+.dm-footer-btns { display: flex; gap: 8px; }
+.dm-footer-btns button {
+    padding: 8px 20px; border-radius: 8px; font-size: 13px;
+    cursor: pointer; font-family: inherit; border: 1px solid #d0d0d0;
+    transition: all .15s;
+}
+.dm-footer-btns .btn-restore-all { background: #27ae60; color: #fff; border-color: #27ae60; }
+.dm-footer-btns .btn-restore-all:hover { background: #219a52; }
+
 /* Mobile */
 @media (max-width: 768px) {
     .th-check, .td-check { width: 34px; }
@@ -514,7 +591,7 @@ tr:hover .copy-name-btn { opacity: .6; }
         <span class="stat-badge soldout">❌ 0</span>
     </div>
     <span class="restore-hint" id="restoreHint" style="display:none; font-size:12px; color:#e74c3c; margin-left:12px;">
-        已删除 <span class="restore-count">0</span> 条 · <a href="javascript:void(0)" onclick="restoreDeleted()" style="color:#e74c3c; text-decoration:underline;">恢复</a>
+        已删除 <span class="restore-count">0</span> 条 · <a href="javascript:void(0)" onclick="openDeletedManager()" style="color:#e74c3c; text-decoration:underline;">管理</a> · <a href="javascript:void(0)" onclick="restoreAll()" style="color:#e74c3c; text-decoration:underline;">全部恢复</a>
     </span>
 </div>
 
@@ -17361,43 +17438,83 @@ function exportCSV() {
 renderPagination();
 
 
-// ── Delete functions (with localStorage persistence) ──
-var DELETED_KEY = 'minigt_deleted_skus';
+// ── Delete functions (with localStorage persistence + manager) ──
+var DELETED_KEY = 'minigt_deleted_data';
 
-function getDeletedSet() {
+function getDeletedData() {
     try {
-        return new Set(JSON.parse(localStorage.getItem(DELETED_KEY)) || []);
-    } catch(e) { return new Set(); }
+        var d = JSON.parse(localStorage.getItem(DELETED_KEY)) || {};
+        return {
+            deleted: d.deleted || [],
+            permanentDeleted: new Set(d.permanentDeleted || [])
+        };
+    } catch(e) {
+        return { deleted: [], permanentDeleted: new Set() };
+    }
 }
-function saveDeletedSet(set) {
-    localStorage.setItem(DELETED_KEY, JSON.stringify(Array.from(set)));
+function saveDeletedData(data) {
+    localStorage.setItem(DELETED_KEY, JSON.stringify({
+        deleted: data.deleted,
+        permanentDeleted: Array.from(data.permanentDeleted)
+    }));
 }
 
-// On page load: remove rows whose SKU is in deleted set
+// Migrate old format
 (function(){
-    var deleted = getDeletedSet();
-    if (deleted.size === 0) return;
+    var old = localStorage.getItem('minigt_deleted_skus');
+    if (old) {
+        try {
+            var oldArr = JSON.parse(old);
+            if (Array.isArray(oldArr) && oldArr.length > 0) {
+                var data = getDeletedData();
+                oldArr.forEach(function(sku) {
+                    data.deleted.push({ sku: sku, name: sku, img: '' });
+                });
+                saveDeletedData(data);
+            }
+        } catch(e) {}
+        localStorage.removeItem('minigt_deleted_skus');
+    }
+})();
+
+// On page load: remove rows whose SKU is in deleted or permanentDeleted
+(function(){
+    var data = getDeletedData();
+    var allSkus = new Set();
+    data.deleted.forEach(function(d) { allSkus.add(d.sku); });
+    data.permanentDeleted.forEach(function(s) { allSkus.add(s); });
+    if (allSkus.size === 0) return;
     var removed = 0;
     document.querySelectorAll('tbody tr[data-sku]').forEach(function(tr) {
-        if (deleted.has(tr.dataset.sku)) {
+        if (allSkus.has(tr.dataset.sku)) {
             tr.remove();
             removed++;
         }
     });
     if (removed > 0) {
-        // Update header count
         setTimeout(function() {
             var total = document.querySelectorAll('tbody tr').length;
             var hp = document.querySelector('.header p');
             if (hp) hp.innerHTML = hp.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
-            // Show restore hint
             var hint = document.getElementById('restoreHint');
-            if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = deleted.size; }
-            // Re-render pagination
+            if (hint) {
+                var data2 = getDeletedData();
+                hint.style.display = 'inline';
+                hint.querySelector('.restore-count').textContent = data2.deleted.length + data2.permanentDeleted.size;
+            }
             filterTable();
         }, 100);
     }
 })();
+
+// Helper: collect name + img from a tr
+function extractDeletedItem(tr) {
+    var name = tr.dataset.name || 'Unknown';
+    var img = '';
+    var imgEl = tr.querySelectorAll('img')[0];
+    if (imgEl) img = imgEl.src;
+    return { sku: tr.dataset.sku, name: name, img: img };
+}
 
 function updateDeleteBtn() {
     var n = document.querySelectorAll('.row-check:checked').length;
@@ -17441,39 +17558,39 @@ function doDelete() {
         var tr = window._deleteTr;
         var name = tr.dataset.name || '未知';
         var sku = tr.dataset.sku || '';
-        var deletedSet = getDeletedSet();
-        if (sku) deletedSet.add(sku);
-        saveDeletedSet(deletedSet);
+        var data = getDeletedData();
+        data.deleted.push(extractDeletedItem(tr));
+        saveDeletedData(data);
         tr.remove();
         window._deleteTr = null;
         var total = document.querySelectorAll('tbody tr').length;
         var headerP = document.querySelector('.header p');
         headerP.innerHTML = headerP.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
         var hint = document.getElementById('restoreHint');
-        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = deletedSet.size; }
+        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.size; }
         filterTable();
         showToast('已删除：' + name + '（刷新后仍会隐藏）');
     } else {
         // Batch delete
         var checked = document.querySelectorAll('.row-check:checked');
         var deleted = 0;
-        var deletedSet = getDeletedSet();
+        var data = getDeletedData();
         checked.forEach(function(cb) {
             var tr2 = cb.closest('tr');
             if (tr2) {
-                deletedSet.add(tr2.dataset.sku);
+                data.deleted.push(extractDeletedItem(tr2));
                 tr2.remove();
                 deleted++;
             }
         });
-        saveDeletedSet(deletedSet);
+        saveDeletedData(data);
         var total = document.querySelectorAll('tbody tr').length;
         var headerP = document.querySelector('.header p');
         headerP.innerHTML = headerP.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
         document.getElementById('checkAll').checked = false;
         updateDeleteBtn();
         var hint = document.getElementById('restoreHint');
-        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = deletedSet.size; }
+        if (hint) { hint.style.display = 'inline'; hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.size; }
         filterTable();
         showToast('已删除 ' + deleted + ' 条记录（刷新后仍会隐藏）');
     }
@@ -17490,10 +17607,91 @@ function deleteRow(btn) {
     window._deleteTr = tr;
 }
 
-// ── Restore / Clear ──
-function restoreDeleted() {
-    localStorage.removeItem(DELETED_KEY);
-    showToast('已恢复所有删除记录，正在刷新...');
+// ── Deleted Manager ──
+function openDeletedManager() {
+    var data = getDeletedData();
+    var total = data.deleted.length + data.permanentDeleted.size;
+    if (total === 0) { showToast('没有已删除的记录'); return; }
+
+    var tbody = document.getElementById('dmTableBody');
+    var html = '';
+    var permSet = data.permanentDeleted;
+    data.deleted.forEach(function(item, i) {
+        var safeName = (item.name || 'Unknown').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var safeSku = (item.sku || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var imgTag = item.img ? '<img src="' + item.img.replace(/"/g, '&quot;') + '" alt="">' : '<div style="width:44px;height:33px;background:#f5f5f5;border-radius:4px;border:1px solid #eee;"></div>';
+        html += '<tr data-idx="' + i + '">' +
+            '<td class="dm-img">' + imgTag + '</td>' +
+            '<td class="dm-sku">' + safeSku + '</td>' +
+            '<td class="dm-name">' + safeName + '</td>' +
+            '<td class="dm-actions">' +
+                '<button class="dm-btn dm-btn-restore" onclick="restoreSingle(' + i + ')">恢复</button>' +
+                '<button class="dm-btn dm-btn-perm" onclick="permanentDelete(' + i + ')">永久删除</button>' +
+            '</td>' +
+        '</tr>';
+    });
+    permSet.forEach(function(sku) {
+        var safeSku = sku.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        html += '<tr style="opacity:.45">' +
+            '<td class="dm-img"></td>' +
+            '<td class="dm-sku">' + safeSku + '</td>' +
+            '<td class="dm-name" style="color:#999">(已永久删除)</td>' +
+            '<td class="dm-actions"><span style="font-size:11px;color:#999;">不可恢复</span></td>' +
+        '</tr>';
+    });
+    if (!html) html = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#999;">暂无记录</td></tr>';
+    tbody.innerHTML = html;
+    document.getElementById('dmTotal').textContent = total;
+    var btnRestoreAll = document.getElementById('btnRestoreAll');
+    if (btnRestoreAll) btnRestoreAll.style.display = data.deleted.length > 0 ? '' : 'none';
+    document.getElementById('dmOverlay').classList.add('active');
+}
+function closeDeletedManager() {
+    document.getElementById('dmOverlay').classList.remove('active');
+}
+function restoreSingle(idx) {
+    var data = getDeletedData();
+    if (idx < 0 || idx >= data.deleted.length) return;
+    data.deleted.splice(idx, 1);
+    saveDeletedData(data);
+    var totalAfter = data.deleted.length + data.permanentDeleted.size;
+    var hint = document.getElementById('restoreHint');
+    if (hint) {
+        if (totalAfter === 0) { hint.style.display = 'none'; }
+        else { hint.querySelector('.restore-count').textContent = totalAfter; }
+    }
+    showToast('已恢复，刷新后显示');
+    setTimeout(function(){ location.reload(); }, 600);
+}
+function permanentDelete(idx) {
+    var data = getDeletedData();
+    if (idx < 0 || idx >= data.deleted.length) return;
+    var item = data.deleted[idx];
+    if (!confirm('确定要永久删除「' + item.name + '」吗？\n永久删除后将无法恢复。')) return;
+    data.permanentDeleted.add(item.sku);
+    data.deleted.splice(idx, 1);
+    saveDeletedData(data);
+    var totalAfter = data.deleted.length + data.permanentDeleted.size;
+    var hint = document.getElementById('restoreHint');
+    if (hint) {
+        if (totalAfter === 0) { hint.style.display = 'none'; }
+        else { hint.querySelector('.restore-count').textContent = totalAfter; }
+    }
+    openDeletedManager();
+}
+function restoreAll() {
+    var data = getDeletedData();
+    if (data.deleted.length === 0 && data.permanentDeleted.size === 0) {
+        showToast('没有可恢复的记录');
+        return;
+    }
+    if (data.permanentDeleted.size > 0) {
+        if (!confirm('将恢复 ' + data.deleted.length + ' 条记录（' + data.permanentDeleted.size + ' 条永久删除的不会恢复）。\n确定？')) return;
+    }
+    data.deleted = [];
+    saveDeletedData(data);
+    closeDeletedManager();
+    showToast('已恢复所有可恢复记录，正在刷新...');
     setTimeout(function(){ location.reload(); }, 600);
 }
 
@@ -17508,6 +17706,35 @@ function restoreDeleted() {
         <div class="confirm-btns">
             <button class="btn-cancel" onclick="closeConfirm()">取消</button>
             <button class="btn-confirm" onclick="doDelete()">确认删除</button>
+        </div>
+    </div>
+</div>
+
+<!-- Deleted Manager Modal -->
+<div class="dm-overlay" id="dmOverlay">
+    <div class="dm-box">
+        <div class="dm-header">
+            <h3>🗑️ 已删除管理（<span id="dmTotal">0</span> 条）</h3>
+            <button class="dm-close" onclick="closeDeletedManager()">✕</button>
+        </div>
+        <div class="dm-body">
+            <table class="dm-table">
+                <thead>
+                    <tr>
+                        <th>图片</th>
+                        <th>编号</th>
+                        <th>名称</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="dmTableBody"></tbody>
+            </table>
+        </div>
+        <div class="dm-footer">
+            <span class="dm-empty">永久删除的记录不可恢复。</span>
+            <div class="dm-footer-btns">
+                <button class="btn-restore-all" id="btnRestoreAll" onclick="restoreAll()">全部恢复</button>
+            </div>
         </div>
     </div>
 </div>
