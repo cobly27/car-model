@@ -15960,7 +15960,6 @@ tr:hover .copy-name-btn { opacity: .6; }
 </div>
 
 <!-- Pagination -->
-<div class="pagination-wrap" id="paginationTop"></div>
 <div class="pagination-wrap" id="pagination"></div>
 
 <!-- Footer -->
@@ -16178,9 +16177,7 @@ function renderPaginationUI(page, totalPages, totalItems) {
     html += '<button onclick="goToPage(' + totalPages + ')"' + (page >= totalPages ? ' disabled' : '') + '>⏭</button>';
     
     var pagDiv = document.getElementById('pagination');
-    var pagTopDiv = document.getElementById('paginationTop');
     if (pagDiv) pagDiv.innerHTML = html;
-    if (pagTopDiv) pagTopDiv.innerHTML = html;
 }
 
 // Column sort
