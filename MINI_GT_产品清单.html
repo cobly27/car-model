@@ -420,8 +420,8 @@ tr:hover .copy-name-btn { opacity: .6; }
     </select>
     <button class="btn-export" onclick="exportCSV()" title="导出为 CSV 文件">📥 导出 CSV</button>
     <select id="pageSize" onchange="changePageSize()" title="每页显示条数">
-        <option value="50">每页 50 条</option>
-        <option value="100" selected>每页 100 条</option>
+        <option value="50" selected>每页 50 条</option>
+        <option value="100">每页 100 条</option>
         <option value="200">每页 200 条</option>
     </select>
     <div class="stats-group" id="statsGroup">
@@ -16080,7 +16080,7 @@ function normalize(s) {
 
 // Pagination state
 var currentPage = 1;
-var pageSize = 100;
+var pageSize = 50;
 
 // Filter
 function filterTable() {
