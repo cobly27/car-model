@@ -17,6 +17,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
     background: var(--bg);
     color: var(--dark);
+    visibility: hidden;
 }
 .header {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -559,6 +560,7 @@ tr:hover .copy-name-btn { opacity: .6; }
     vertical-align: middle;
 }
 </style>
+<noscript><style>body { visibility: visible !important; }</style></noscript>
 </head>
 <body>
 
@@ -17477,13 +17479,12 @@ function saveDeletedData(data) {
     }
 })();
 
-// On page load: remove rows whose SKU is in deleted or permanentDeleted
+// On page load: remove rows whose SKU is in deleted or permanentDeleted, then show body
 (function(){
     var data = getDeletedData();
     var allSkus = new Set();
     data.deleted.forEach(function(d) { allSkus.add(d.sku); });
     data.permanentDeleted.forEach(function(s) { allSkus.add(s); });
-    if (allSkus.size === 0) return;
     var removed = 0;
     document.querySelectorAll('tbody tr[data-sku]').forEach(function(tr) {
         if (allSkus.has(tr.dataset.sku)) {
@@ -17491,20 +17492,18 @@ function saveDeletedData(data) {
             removed++;
         }
     });
-    if (removed > 0) {
-        setTimeout(function() {
-            var total = document.querySelectorAll('tbody tr').length;
-            var hp = document.querySelector('.header p');
-            if (hp) hp.innerHTML = hp.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
-            var hint = document.getElementById('restoreHint');
-            if (hint) {
-                var data2 = getDeletedData();
-                hint.style.display = 'inline';
-                hint.querySelector('.restore-count').textContent = data2.deleted.length + data2.permanentDeleted.size;
-            }
-            filterTable();
-        }, 100);
+    // Update header count and restore hint (sync, before body becomes visible)
+    var total = document.querySelectorAll('tbody tr').length;
+    var hp = document.querySelector('.header p');
+    if (hp) hp.innerHTML = hp.innerHTML.replace(/共 \d+ 款/, '共 ' + total + ' 款');
+    var hint = document.getElementById('restoreHint');
+    if (hint && (data.deleted.length > 0 || data.permanentDeleted.length > 0)) {
+        hint.style.display = 'inline';
+        hint.querySelector('.restore-count').textContent = data.deleted.length + data.permanentDeleted.length;
     }
+    filterTable();
+    // Body is now ready — make it visible
+    document.body.style.visibility = 'visible';
 })();
 
 // Helper: collect name + img from a tr
