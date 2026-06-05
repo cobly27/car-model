@@ -85,6 +85,15 @@ body {
     font-weight: 600;
 }
 .btn-export:hover { opacity: .85; }
+.btn-clean-export {
+    background: #27ae60 !important;
+    color: #fff !important;
+    border: none !important;
+    cursor: pointer;
+    transition: opacity .2s;
+    font-weight: 600;
+}
+.btn-clean-export:hover { opacity: .85; }
 
 .table-wrap { overflow-x: auto; }
 table { width: 100%; table-layout: fixed; border-collapse: collapse; background: var(--card); min-width: 700px; }
@@ -580,6 +589,7 @@ tr:hover .copy-name-btn { opacity: .6; }
         <option value="Sold Out">❌ Sold Out</option>
     </select>
     <button class="btn-export" onclick="exportCSV()" title="导出为 CSV 文件">📥 导出 CSV</button>
+    <button class="btn-clean-export" onclick="exportCleanHTML()" title="导出已永久删除行被物理移除的 HTML 文件">📦 导出清理版</button>
     <select id="pageSize" onchange="changePageSize()" title="每页显示条数">
         <option value="50" selected>每页 50 条</option>
         <option value="100">每页 100 条</option>
@@ -17434,6 +17444,57 @@ function exportCSV() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast('CSV 已导出（当前筛选结果）');
+}
+
+// ── Export Clean HTML (permanently deleted rows removed from source) ──
+function exportCleanHTML() {
+    var data = getDeletedData();
+    var permSet = new Set(data.permanentDeleted);
+    var hasPerm = permSet.size > 0;
+
+    // Clone the entire document
+    var clone = document.documentElement.cloneNode(true);
+
+    // Remove permanently deleted rows from the clone's tbody
+    if (hasPerm) {
+        var tbody = clone.querySelector('tbody');
+        if (tbody) {
+            tbody.querySelectorAll('tr[data-sku]').forEach(function(tr) {
+                if (permSet.has(tr.dataset.sku)) {
+                    tr.remove();
+                }
+            });
+        }
+    }
+
+    // Update header count in clone
+    var hp = clone.querySelector('.header p');
+    if (hp) {
+        var remaining = clone.querySelectorAll('tbody tr').length;
+        hp.innerHTML = hp.innerHTML.replace(/共 \d+ 款/, '共 ' + remaining + ' 款');
+    }
+
+    // Remove restore-hint from clone (no longer needed)
+    var rh = clone.querySelector('.restore-hint');
+    if (rh) rh.remove();
+
+    // Remove "导出清理版" button from clone
+    var cleanBtn = clone.querySelector('.btn-clean-export');
+    if (cleanBtn) cleanBtn.remove();
+
+    // Serialize to string
+    var html = '<!DOCTYPE html>\n' + clone.outerHTML;
+
+    var blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'MINI_GT_产品清单_清理版.html';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(hasPerm ? '清理版 HTML 已导出（已移除 ' + permSet.size + ' 条永久删除记录）' : '清理版 HTML 已导出（无永久删除记录）');
 }
 
 // Initial pagination render
