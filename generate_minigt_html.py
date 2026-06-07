@@ -986,6 +986,7 @@ const categoryStats = CATEGORY_STATS_PLACEHOLDER;
 let currentImages = [];
 let currentImageIndex = 0;
 let currentModalName = '';
+const preloadedImages = new Set();
 let sortState = { col: '', dir: 1 };
 let currentFilter = '';
 // 兼容旧数据：同时读取两个键名
@@ -1005,6 +1006,38 @@ const categoryPagination = {};
 const categoryCurrentFilter = {};
 const categoryCurrentPage = {};
 const categoryPageSize = {};
+
+function readElementImages(element) {
+    if (!element || !element.dataset.images) return [];
+    try {
+        const images = JSON.parse(element.dataset.images.replace(/&quot;/g, '"'));
+        return Array.isArray(images) ? images.filter(Boolean) : [];
+    } catch (e) {
+        console.warn('Failed to parse preload images:', e);
+        return [];
+    }
+}
+
+function preloadImage(src) {
+    if (!src || preloadedImages.has(src)) return;
+    preloadedImages.add(src);
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+}
+
+function preloadProductImages(element, limit = 3) {
+    const images = readElementImages(element);
+    images.slice(1, limit).forEach(preloadImage);
+}
+
+function preloadModalNeighbors() {
+    if (!currentImages || currentImages.length < 2) return;
+    const nextIndex = (currentImageIndex + 1) % currentImages.length;
+    const prevIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+    preloadImage(currentImages[nextIndex]);
+    preloadImage(currentImages[prevIndex]);
+}
 
 // 初始化各分类的状态
 Object.keys(categoryStats).forEach(catId => {
@@ -1329,6 +1362,7 @@ function openMultiModalFromElement(element, imgIndex) {
         console.error('Element not found');
         return;
     }
+    preloadProductImages(element, 3);
     
     // 尝试从 data 属性读取
     try {
@@ -1373,6 +1407,7 @@ function openMultiModal(images, name, index) {
     currentImages = images;
     currentImageIndex = index;
     currentModalName = name;
+    currentImages.forEach(preloadImage);
     updateModalImage();
     document.getElementById('modalCaption').textContent = name;
     document.getElementById('modalOverlay').classList.add('active');
@@ -1399,6 +1434,7 @@ function updateModalImage() {
     img.removeAttribute('src');
     img.src = nextSrc;
     document.getElementById('modalCounter').textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+    preloadModalNeighbors();
 }
 function prevImage() {
     currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
@@ -1579,6 +1615,8 @@ if ('IntersectionObserver' in window) {
         entries.forEach(e => {
             if (e.isIntersecting) {
                 e.target.classList.add('loaded');
+                const card = e.target.closest('.card-item');
+                if (card) preloadProductImages(card, 3);
                 observer.unobserve(e.target);
             }
         });
