@@ -647,6 +647,19 @@ tr:hover .copy-name-btn { opacity: .6; }
     cursor: default;
 }
 @keyframes zoomIn { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-content.loading::after {
+    content: "加载中...";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 14px;
+    background: rgba(0,0,0,0.55);
+    padding: 8px 14px;
+    border-radius: 8px;
+    pointer-events: none;
+}
 .modal-content img {
     max-width: 90vw;
     max-height: 80vh;
@@ -654,6 +667,8 @@ tr:hover .copy-name-btn { opacity: .6; }
     box-shadow: 0 8px 40px rgba(0,0,0,.5);
     object-fit: contain;
     background: #000;
+    opacity: 1;
+    transition: opacity 0.12s ease;
 }
 .modal-close {
     position: absolute;
@@ -970,6 +985,7 @@ const categoryStats = CATEGORY_STATS_PLACEHOLDER;
 // Global state
 let currentImages = [];
 let currentImageIndex = 0;
+let currentModalName = '';
 let sortState = { col: '', dir: 1 };
 let currentFilter = '';
 // 兼容旧数据：同时读取两个键名
@@ -1356,6 +1372,7 @@ function openMultiModal(images, name, index) {
     if (!images || images.length === 0) return;
     currentImages = images;
     currentImageIndex = index;
+    currentModalName = name;
     updateModalImage();
     document.getElementById('modalCaption').textContent = name;
     document.getElementById('modalOverlay').classList.add('active');
@@ -1364,7 +1381,23 @@ function openMultiModal(images, name, index) {
 function updateModalImage() {
     if (!currentImages || currentImages.length === 0) return;
     const img = document.getElementById('modalImg');
-    img.src = currentImages[currentImageIndex];
+    const content = img.closest('.modal-content');
+    const nextSrc = currentImages[currentImageIndex];
+    
+    if (content) content.classList.add('loading');
+    img.style.opacity = '0';
+    img.onload = () => {
+        img.style.opacity = '1';
+        document.getElementById('modalCaption').textContent = currentModalName;
+        if (content) content.classList.remove('loading');
+    };
+    img.onerror = () => {
+        if (content) content.classList.remove('loading');
+        document.getElementById('modalCaption').textContent = '图片加载失败';
+    };
+    // 先清空旧图，避免切换时旧图片继续停留造成“下一张没变”的错觉
+    img.removeAttribute('src');
+    img.src = nextSrc;
     document.getElementById('modalCounter').textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
 }
 function prevImage() {
