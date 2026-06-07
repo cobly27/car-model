@@ -3,9 +3,13 @@
 
 import requests
 import json
+import sys
+from pathlib import Path
 
 BASE_URL = "https://www.armodel.com.cn"
 API_URL = f"{BASE_URL}/api/product/list"
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUT_PATH = BASE_DIR / 'ar_products_api.json'
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -74,12 +78,10 @@ def fetch_all_products():
                 page += 1
 
             else:
-                print(f"API返回错误: {data.get('info', '未知错误')}")
-                break
+                raise RuntimeError(f"API返回错误: {data.get('info', '未知错误')}")
 
         except Exception as e:
-            print(f"请求失败: {e}")
-            break
+            raise RuntimeError(f"请求失败: {e}") from e
 
     print()
     print(f"共抓取 {len(all_products)} 个产品")
@@ -91,7 +93,16 @@ def fetch_product_details(product_id):
     return {}
 
 if __name__ == '__main__':
-    products = fetch_all_products()
+    try:
+        products = fetch_all_products()
+    except Exception as e:
+        print(f"错误：{e}")
+        sys.exit(1)
+
+    if not products:
+        print("错误：未抓取到任何 AR 产品")
+        sys.exit(1)
+
     print()
     print("产品列表:")
     for i, p in enumerate(products[:20], 1):
@@ -101,7 +112,7 @@ if __name__ == '__main__':
         print(f"... 还有 {len(products) - 20} 个产品")
 
     # 保存为JSON
-    with open('ar_products_api.json', 'w', encoding='utf-8') as f:
+    with OUTPUT_PATH.open('w', encoding='utf-8') as f:
         json.dump(products, f, ensure_ascii=False, indent=2)
     print()
-    print(f"已保存到 ar_products_api.json")
+    print(f"已保存到 {OUTPUT_PATH.name}")

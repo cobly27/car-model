@@ -5,9 +5,13 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import time
-import os
+import sys
+from pathlib import Path
 
 BASE_URL = "https://www.armodel.com.cn"
+BASE_DIR = Path(__file__).resolve().parent
+INPUT_PATH = BASE_DIR / 'ar_products_api.json'
+OUTPUT_PATH = BASE_DIR / 'ar_products_detail.json'
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -16,7 +20,7 @@ HEADERS = {
 }
 
 REQUEST_DELAY = 1  # 每次请求间隔秒数
-OUTPUT_FILE = 'ar_products_detail.json'
+OUTPUT_FILE = OUTPUT_PATH.name
 
 def scrape_detail_images(product_id):
     """抓取详情页的所有图片 - 精确抓取轮播图区域的图片"""
@@ -65,14 +69,14 @@ def scrape_detail_images(product_id):
 
 def load_existing_products():
     """加载已存在的产品列表"""
-    if os.path.exists('ar_products_api.json'):
-        with open('ar_products_api.json', 'r', encoding='utf-8') as f:
+    if INPUT_PATH.exists():
+        with INPUT_PATH.open('r', encoding='utf-8') as f:
             return json.load(f)
     return []
 
 def save_progress(products, failed_ids):
     """保存抓取进度"""
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+    with OUTPUT_PATH.open('w', encoding='utf-8') as f:
         json.dump({
             'products': products,
             'failed_ids': failed_ids,
@@ -89,16 +93,16 @@ def main():
     products = load_existing_products()
     if not products:
         print("错误：未找到 ar_products_api.json 文件")
-        return
+        sys.exit(1)
 
     print(f"共有 {len(products)} 个产品需要抓取")
     print()
 
     # 检查是否有已保存的进度
     existing_data = {}
-    if os.path.exists(OUTPUT_FILE):
+    if OUTPUT_PATH.exists():
         try:
-            with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
+            with OUTPUT_PATH.open('r', encoding='utf-8') as f:
                 existing_data = json.load(f)
                 existing_products = existing_data.get('products', [])
                 print(f"找到已保存的进度：{len(existing_products)} 个产品已抓取")
