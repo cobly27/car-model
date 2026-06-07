@@ -2,7 +2,12 @@
 """更新AR产品的图片数据"""
 
 import json
-import os
+import sys
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+DETAIL_PATH = BASE_DIR / 'ar_products_detail.json'
+PRODUCTS_PATH = BASE_DIR / 'minigt_products.json'
 
 def main():
     print("开始更新AR产品图片数据...")
@@ -10,12 +15,12 @@ def main():
 
     # 读取详情页抓取的数据
     print("读取详情页抓取的数据...")
-    if not os.path.exists('ar_products_detail.json'):
+    if not DETAIL_PATH.exists():
         print("错误：未找到 ar_products_detail.json 文件")
         print("请先运行 scrape_ar_detail_images.py 抓取图片")
-        return
+        sys.exit(1)
 
-    with open('ar_products_detail.json', 'r', encoding='utf-8') as f:
+    with DETAIL_PATH.open('r', encoding='utf-8') as f:
         detail_data = json.load(f)
 
     detail_products = detail_data.get('products', [])
@@ -31,7 +36,7 @@ def main():
     # 读取现有的minigt_products.json
     print()
     print("读取现有产品数据...")
-    with open('minigt_products.json', 'r', encoding='utf-8') as f:
+    with PRODUCTS_PATH.open('r', encoding='utf-8') as f:
         data = json.load(f)
 
     # 找到AR分类
@@ -43,7 +48,7 @@ def main():
 
     if ar_category_idx == -1:
         print("错误：未找到AR分类！")
-        return
+        sys.exit(1)
 
     ar_products = data['categories'][ar_category_idx].get('products', [])
     print(f"AR分类现有 {len(ar_products)} 个产品")
@@ -65,7 +70,7 @@ def main():
     # 保存更新后的数据
     print()
     print("保存更新后的数据...")
-    with open('minigt_products.json', 'w', encoding='utf-8') as f:
+    with PRODUCTS_PATH.open('w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
     print()
