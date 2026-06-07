@@ -1021,6 +1021,11 @@ function readElementImages(element) {
 function preloadImage(src) {
     if (!src || preloadedImages.has(src)) return;
     preloadedImages.add(src);
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = src;
+    document.head.appendChild(link);
     const img = new Image();
     img.decoding = 'async';
     img.src = src;
@@ -1029,6 +1034,42 @@ function preloadImage(src) {
 function preloadProductImages(element, limit = 3) {
     const images = readElementImages(element);
     images.slice(1, limit).forEach(preloadImage);
+}
+
+function preloadCardCover(element, eager = false) {
+    const img = element?.querySelector('.card-img img');
+    const src = img?.getAttribute('src');
+    if (img && eager) {
+        img.loading = 'eager';
+        img.fetchPriority = 'high';
+    }
+    preloadImage(src);
+}
+
+function preloadPageCovers(items, eager = false) {
+    items.forEach(item => preloadCardCover(item, eager));
+}
+
+function preloadPageCoversInChunks(items) {
+    const chunkSize = 20;
+    let offset = 0;
+    
+    const runChunk = () => {
+        preloadPageCovers(items.slice(offset, offset + chunkSize), true);
+        offset += chunkSize;
+        if (offset < items.length) setTimeout(runChunk, 120);
+    };
+    
+    runChunk();
+}
+
+function preloadUpcomingPageCovers(visibleRows, endIndex) {
+    if (currentView !== 'cards') return;
+    const nextPageStart = endIndex;
+    const nextPageEnd = Math.min(nextPageStart + pageSize, visibleRows.length);
+    if (nextPageStart >= nextPageEnd) return;
+
+    preloadPageCoversInChunks(visibleRows.slice(nextPageStart, nextPageEnd));
 }
 
 function preloadModalNeighbors() {
@@ -1273,6 +1314,8 @@ function updatePagination(visibleRows) {
     for (let i = startIndex; i < endIndex; i++) {
         visibleRows[i].classList.remove('hidden');
     }
+    preloadPageCovers(visibleRows.slice(startIndex, endIndex));
+    preloadUpcomingPageCovers(visibleRows, endIndex);
     
     // Update pagination UI
     document.getElementById('pageInfo').textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
