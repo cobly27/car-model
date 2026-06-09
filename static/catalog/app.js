@@ -1,10 +1,13 @@
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20400%20300'%3E%3Crect%20width='400'%20height='300'%20fill='%23f2f4f8'/%3E%3Ctext%20x='200'%20y='158'%20font-family='Arial'%20font-size='24'%20fill='%23909aaa'%20text-anchor='middle'%3ENo%20image%3C/text%3E%3C/svg%3E";
+const UI_STATE_KEY = "catalogV2UiState";
+const THEME_KEY = "minigtTheme";
 
 const state = {
     data: null,
     updateConfigs: [],
     imagePolicies: {},
     health: null,
+    healthIssueFilter: null,
     productsByCategory: new Map(),
     stats: {},
     currentCategory: "",
@@ -12,6 +15,7 @@ const state = {
     currentPage: 1,
     pageSize: 20,
     currentView: "cards",
+    searchQuery: "",
     filteredProducts: [],
     filterByCategory: {},
     pageByCategory: {},
@@ -63,6 +67,26 @@ function saveFavorites() {
     const values = [...state.favorites];
     localStorage.setItem("minigtFavorites", JSON.stringify(values));
     localStorage.setItem("minigt_favorites", JSON.stringify(values));
+}
+
+function loadUiState() {
+    try {
+        return JSON.parse(localStorage.getItem(UI_STATE_KEY) || "{}");
+    } catch {
+        return {};
+    }
+}
+
+function saveUiState() {
+    if (!state.data) return;
+    localStorage.setItem(UI_STATE_KEY, JSON.stringify({
+        currentCategory: state.currentCategory,
+        currentFilter: state.currentFilter,
+        currentPage: state.currentPage,
+        pageSize: state.pageSize,
+        currentView: state.currentView,
+        searchQuery: $("#search")?.value || state.searchQuery || "",
+    }));
 }
 
 function statusClass(status) {
@@ -195,6 +219,18 @@ async function loadCatalog() {
     const data = await catalogResponse.json();
     const updateConfig = await updateConfigResponse.json();
 
+    applyCatalogPayload(data, updateConfig, false, loadUiState());
+}
+
+function applyCatalogPayload(data, updateConfig, preserveState = false, savedState = {}) {
+    const previousFilters = preserveState ? { ...state.filterByCategory } : {};
+    const previousPages = preserveState ? { ...state.pageByCategory } : {};
+    const previousCategory = preserveState ? state.currentCategory : savedState.currentCategory || "";
+
+    state.productsByCategory.clear();
+    state.filterByCategory = {};
+    state.pageByCategory = {};
+
     let index = 1;
     data.categories.forEach(category => {
         const products = (category.products || []).map(product => ({
@@ -203,15 +239,56 @@ async function loadCatalog() {
             index: index++,
         }));
         state.productsByCategory.set(category.id, products);
-        state.filterByCategory[category.id] = "";
-        state.pageByCategory[category.id] = 1;
+        state.filterByCategory[category.id] = previousFilters[category.id] || "";
+        state.pageByCategory[category.id] = previousPages[category.id] || 1;
     });
 
     state.data = data;
     state.updateConfigs = updateConfig.updates || [];
     state.imagePolicies = data.image_policies || {};
     state.stats = data.category_stats || {};
-    state.currentCategory = data.categories[0]?.id || "";
+    if (!preserveState) {
+        state.pageSize = [20, 50, 100].includes(Number(savedState.pageSize)) ? Number(savedState.pageSize) : 20;
+        state.currentView = savedState.currentView === "table" ? "table" : "cards";
+        state.searchQuery = String(savedState.searchQuery || "");
+    }
+
+    const categoryExists = data.categories.some(category => category.id === previousCategory);
+    state.currentCategory = preserveState && categoryExists ? previousCategory : data.categories[0]?.id || "";
+    if (!preserveState && categoryExists) state.currentCategory = previousCategory;
+    state.currentFilter = state.filterByCategory[state.currentCategory] || "";
+    if (!preserveState && savedState.currentFilter) {
+        const allowed = categoryScopedFilters[state.currentCategory] || new Set(["", "fav"]);
+        state.currentFilter = allowed.has(savedState.currentFilter) ? savedState.currentFilter : "";
+        state.filterByCategory[state.currentCategory] = state.currentFilter;
+    }
+    state.currentPage = state.pageByCategory[state.currentCategory] || 1;
+    if (!preserveState && Number(savedState.currentPage) > 0) {
+        state.currentPage = Number(savedState.currentPage);
+        state.pageByCategory[state.currentCategory] = state.currentPage;
+    }
+}
+
+async function refreshCatalogDataAfterUpdate() {
+    const [catalogResponse, updateConfigResponse, healthResponse] = await Promise.all([
+        fetch("/api/catalog-data"),
+        fetch("/api/update-config"),
+        fetch("/api/catalog-health"),
+    ]);
+    if (!catalogResponse.ok) throw new Error(`catalog HTTP ${catalogResponse.status}`);
+    if (!updateConfigResponse.ok) throw new Error(`update-config HTTP ${updateConfigResponse.status}`);
+    if (!healthResponse.ok) throw new Error(`health HTTP ${healthResponse.status}`);
+
+    const data = await catalogResponse.json();
+    const updateConfig = await updateConfigResponse.json();
+    const health = await healthResponse.json();
+    applyCatalogPayload(data, updateConfig, true);
+    state.health = health;
+    updateHealthBadge(health);
+    renderCategoryOptions();
+    renderUpdateButtons();
+    syncScopedControls();
+    applyFilter();
 }
 
 function initializeUI() {
@@ -219,6 +296,9 @@ function initializeUI() {
     renderCategoryOptions();
     renderUpdateButtons();
     bindEvents();
+    $("#search").value = state.searchQuery;
+    syncSearchClear();
+    setView(state.currentView);
     syncScopedControls();
     applyFilter();
     refreshHealthBadge();
@@ -262,6 +342,8 @@ function bindEvents() {
 
     $("#themeBtn").addEventListener("click", toggleTheme);
     $("#healthBtn").addEventListener("click", showCatalogHealth);
+    $("#healthExportBtn").addEventListener("click", exportHealthIssues);
+    $("#historyBtn").addEventListener("click", showUpdateHistory);
     $("#statusPanel").addEventListener("click", handleStatusPanelClick);
     $("#updateActions").addEventListener("click", event => {
         const button = event.target.closest(".update-btn");
@@ -296,6 +378,7 @@ function onSearchInput() {
     }
     syncSearchClear();
     state.searchTimer = setTimeout(applyFilter, 180);
+    saveUiState();
 }
 
 function clearSearch() {
@@ -304,6 +387,7 @@ function clearSearch() {
     state.pageByCategory[state.currentCategory] = 1;
     syncSearchClear();
     applyFilter();
+    saveUiState();
     $("#search").focus();
 }
 
@@ -312,12 +396,16 @@ function switchCategory(categoryId) {
     state.filterByCategory[state.currentCategory] = state.currentFilter;
     state.pageByCategory[state.currentCategory] = state.currentPage;
     state.currentCategory = categoryId;
+    if (state.healthIssueFilter && state.healthIssueFilter.categoryId !== categoryId) {
+        state.healthIssueFilter = null;
+    }
     const allowed = categoryScopedFilters[categoryId] || new Set(["", "fav"]);
     state.currentFilter = allowed.has(state.filterByCategory[categoryId]) ? state.filterByCategory[categoryId] : "";
     state.currentPage = state.pageByCategory[categoryId] || 1;
     $("#categorySelect").value = categoryId;
     syncScopedControls();
     applyFilter();
+    saveUiState();
 }
 
 function setFilter(filter) {
@@ -328,6 +416,7 @@ function setFilter(filter) {
     state.pageByCategory[state.currentCategory] = 1;
     syncFilterButtons();
     applyFilter();
+    saveUiState();
 }
 
 function setView(view) {
@@ -336,6 +425,7 @@ function setView(view) {
     $("#cardsView").classList.toggle("hidden", state.currentView !== "cards");
     $("#tableView").classList.toggle("hidden", state.currentView !== "table");
     renderCurrentPage();
+    saveUiState();
 }
 
 function syncScopedControls() {
@@ -370,17 +460,23 @@ function currentSourceProducts() {
 function applyFilter() {
     const query = $("#search").value.trim().toLowerCase();
     const products = currentSourceProducts();
+    const healthKeys = state.healthIssueFilter?.categoryId === state.currentCategory
+        ? state.healthIssueFilter.keys
+        : null;
     state.filteredProducts = products.filter(product => {
         const sku = String(product.sku || "").toLowerCase();
         const name = String(product.name || "").toLowerCase();
         const detailId = String(product.detail_id || "").toLowerCase();
         const matchesSearch = !query || sku.includes(query) || name.includes(query) || detailId.includes(query);
+        const matchesHealthIssue = !healthKeys
+            || healthKeys.has(String(product.detail_id || ""))
+            || healthKeys.has(String(product.sku || ""));
         const matchesStatus = !state.currentFilter
             ? true
             : state.currentFilter === "fav"
                 ? state.favorites.has(product.sku)
                 : product.status === state.currentFilter;
-        return matchesSearch && matchesStatus;
+        return matchesSearch && matchesHealthIssue && matchesStatus;
     });
 
     const totalPages = totalPagesForCurrentFilter();
@@ -389,6 +485,7 @@ function applyFilter() {
     updateStats();
     renderPagination();
     renderCurrentPage();
+    saveUiState();
 }
 
 function updateStats() {
@@ -400,6 +497,7 @@ function updateStats() {
     });
     $("#statsGroup").innerHTML = `
         <span class="stat-badge">显示 ${state.filteredProducts.length} / 共 ${totalForCategory}</span>
+        ${state.healthIssueFilter?.categoryId === state.currentCategory ? '<span class="stat-badge health-active">🩺 问题产品</span>' : ''}
         <span class="stat-badge released">✅ ${counts["Released"]}</span>
         <span class="stat-badge preorder">📦 ${counts["Pre-Order"]}</span>
         <span class="stat-badge soldout">❌ ${counts["Sold Out"]}</span>
@@ -453,9 +551,10 @@ function handlePaginationClick(event) {
     }
     state.currentPage = Math.max(1, Math.min(state.currentPage, totalPages));
     state.pageByCategory[state.currentCategory] = state.currentPage;
-    renderPagination();
-    renderCurrentPage();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+        renderPagination();
+        renderCurrentPage();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        saveUiState();
 }
 
 function handlePaginationChange(event) {
@@ -465,6 +564,7 @@ function handlePaginationChange(event) {
         state.pageByCategory[state.currentCategory] = 1;
         renderPagination();
         renderCurrentPage();
+        saveUiState();
     }
     if (event.target.classList.contains("page-jump-input")) {
         event.target.value = clampPage(event.target.value);
@@ -479,6 +579,7 @@ function handlePaginationKeydown(event) {
         renderPagination();
         renderCurrentPage();
         window.scrollTo({ top: 0, behavior: "smooth" });
+        saveUiState();
     }
     if (event.key === "Escape") {
         event.target.value = state.currentPage;
@@ -683,7 +784,9 @@ function showToast(message) {
 }
 
 function applyTheme() {
-    const dark = localStorage.getItem("minigtTheme") === "dark";
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    const dark = storedTheme === "dark"
+        || (storedTheme !== "light" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
     document.body.classList.toggle("dark", dark);
     $("#themeBtn").textContent = dark ? "☀️" : "🌙";
 }
@@ -692,7 +795,15 @@ function toggleTheme() {
     document.body.classList.toggle("dark");
     const dark = document.body.classList.contains("dark");
     $("#themeBtn").textContent = dark ? "☀️" : "🌙";
-    localStorage.setItem("minigtTheme", dark ? "dark" : "light");
+    localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
+}
+
+function watchSystemTheme() {
+    const media = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (!media) return;
+    media.addEventListener("change", () => {
+        if (!localStorage.getItem(THEME_KEY)) applyTheme();
+    });
 }
 
 function formatIssueLine(label, count, examples = []) {
@@ -717,6 +828,24 @@ function healthSampleButtons(category, examples = []) {
     return examples.slice(0, 8).map(example => `
         <button class="health-chip" type="button" data-health-locate="${escapeHtml(category.id)}" data-health-query="${escapeHtml(example)}">${escapeHtml(example)}</button>
     `).join("");
+}
+
+function healthIssueFilterButton(category) {
+    if (!category.issueKeys?.length) return "";
+    return `
+        <button class="health-filter-btn" type="button" data-health-filter="${escapeHtml(category.id)}">
+            只看问题产品（${escapeHtml(category.issueKeys.length)}）
+        </button>
+    `;
+}
+
+function healthMetric(label, value, tone = "") {
+    return `
+        <div class="health-metric${tone ? ` ${tone}` : ""}">
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+        </div>
+    `;
 }
 
 function formatHealthSummaryText(health) {
@@ -750,13 +879,22 @@ function formatHealthSummaryHtml(health) {
         ? `总数正常：${health.metaTotal} / ${health.computedTotal}`
         : `总数异常：meta ${health.metaTotal}，实际 ${health.computedTotal}`;
     const categories = (health.categories || []).filter(category => category.issueCount > 0);
+    const statusText = health.ok ? "数据健康检查通过" : "数据健康检查发现问题";
+    const statusIcon = health.ok ? "✅" : "⚠️";
+    const metrics = [
+        healthMetric("总数", `${health.metaTotal} / ${health.computedTotal}`, health.totalOk ? "success" : "warning"),
+        healthMetric("问题总数", health.issueCount, health.ok ? "success" : "warning"),
+        healthMetric("分类数量", health.categoryCount),
+    ].join("");
 
     if (health.ok) {
         return `
             <div class="health-summary">
-                <div class="health-title">✅ 数据健康检查通过</div>
-                <div>${escapeHtml(totalLine)}</div>
-                <div>分类数量：${escapeHtml(health.categoryCount)}</div>
+                <div class="health-head">
+                    <div class="health-title">${statusIcon} ${escapeHtml(statusText)}</div>
+                    <div class="health-subtitle">${escapeHtml(totalLine)}</div>
+                </div>
+                <div class="health-metrics">${metrics}</div>
             </div>
         `;
     }
@@ -764,24 +902,42 @@ function formatHealthSummaryHtml(health) {
     const categoryHtml = categories.map(category => {
         const lines = issueGroups(category).map(([label, count, examples]) => `
             <div class="health-issue-line">
-                ${escapeHtml(label)}：${escapeHtml(count)}
-                ${examples.length ? `<span>，样本：</span>${healthSampleButtons(category, examples)}` : ""}
+                <div class="health-issue-main">
+                    <span class="health-issue-label">${escapeHtml(label)}</span>
+                    <strong>${escapeHtml(count)}</strong>
+                </div>
+                ${examples.length ? `<div class="health-chip-list">${healthSampleButtons(category, examples)}</div>` : ""}
+            </div>
+        `).join("");
+        const reasonLines = Object.entries(category.missingImageReasons || {}).map(([reason, detail]) => `
+            <div class="health-issue-line">
+                <div class="health-issue-main">
+                    <span class="health-issue-label">缺图原因：${escapeHtml(reason)}</span>
+                    <strong>${escapeHtml(detail.count)}</strong>
+                </div>
+                ${detail.examples?.length ? `<div class="health-chip-list">${healthSampleButtons(category, detail.examples)}</div>` : ""}
             </div>
         `).join("");
         return `
             <div class="health-category">
-                <strong>${escapeHtml(category.name || category.id)}：${escapeHtml(category.issueCount)} 个问题</strong>
+                <div class="health-category-head">
+                    <strong>${escapeHtml(category.name || category.id)}</strong>
+                    <span>${escapeHtml(category.issueCount)} 个问题</span>
+                </div>
                 ${lines}
+                ${reasonLines}
+                ${healthIssueFilterButton(category)}
             </div>
         `;
     }).join("");
 
     return `
         <div class="health-summary">
-            <div class="health-title">⚠️ 数据健康检查发现问题</div>
-            <div>${escapeHtml(totalLine)}</div>
-            <div>问题总数：${escapeHtml(health.issueCount)}</div>
-            <div>分类数量：${escapeHtml(health.categoryCount)}</div>
+            <div class="health-head">
+                <div class="health-title">${statusIcon} ${escapeHtml(statusText)}</div>
+                <div class="health-subtitle">${escapeHtml(totalLine)}</div>
+            </div>
+            <div class="health-metrics">${metrics}</div>
             ${categoryHtml}
         </div>
     `;
@@ -829,6 +985,64 @@ function showCatalogHealth() {
         });
 }
 
+function exportHealthIssues() {
+    window.location.href = "/api/catalog-health.csv";
+}
+
+function formatHistorySummary(summary = {}) {
+    const parts = [];
+    if (summary.fetched_count !== undefined) parts.push(`抓取 ${summary.fetched_count}`);
+    if (summary.added_count !== undefined) parts.push(`新增 ${summary.added_count}`);
+    if (summary.updated_count !== undefined) parts.push(`更新 ${summary.updated_count}`);
+    if (summary.preserved_count !== undefined) parts.push(`保留 ${summary.preserved_count}`);
+    if (summary.missing_image_count !== undefined) parts.push(`缺图 ${summary.missing_image_count}`);
+    if (summary.total_products !== undefined) parts.push(`总数 ${summary.total_products}`);
+    return parts.join("，") || "无结构化摘要";
+}
+
+function formatUpdateHistoryHtml(history) {
+    if (!history.length) {
+        return `
+            <div class="health-summary">
+                <div class="health-title">🕘 更新历史</div>
+                <div>暂无更新记录。</div>
+            </div>
+        `;
+    }
+
+    const rows = history.map(item => `
+        <div class="history-item ${item.status === "failed" ? "failed" : ""}">
+            <strong>${escapeHtml(item.status === "failed" ? "❌" : "✅")} ${escapeHtml(item.brandName || item.brandId || "未知品牌")}</strong>
+            <div>${escapeHtml(item.startedAt || "")} → ${escapeHtml(item.endedAt || "")}</div>
+            <div>${escapeHtml(formatHistorySummary(item.summary || {}))}</div>
+            ${item.error ? `<div>错误：${escapeHtml(item.error)}</div>` : ""}
+        </div>
+    `).join("");
+
+    return `
+        <div class="health-summary">
+            <div class="health-title">🕘 最近更新历史</div>
+            ${rows}
+        </div>
+    `;
+}
+
+function showUpdateHistory() {
+    showStatusPanel("正在读取更新历史...");
+    fetch("/api/update-history?limit=10")
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            showStatusHtmlPanel(formatUpdateHistoryHtml(data.history || []), "success");
+        })
+        .catch(error => {
+            console.error(error);
+            showStatusPanel("⚠️ 无法读取更新历史", "error");
+        });
+}
+
 function locateHealthIssue(categoryId, query) {
     if (!categoryId || !query) return;
     if (categoryId !== state.currentCategory) {
@@ -842,34 +1056,68 @@ function locateHealthIssue(categoryId, query) {
     syncSearchClear();
     syncFilterButtons();
     applyFilter();
+    saveUiState();
     document.querySelector(".pagination-top")?.scrollIntoView({ behavior: "smooth", block: "start" });
     showToast(`已定位: ${query}`);
 }
 
+function showHealthIssueProducts(categoryId) {
+    const category = state.health?.categories?.find(item => item.id === categoryId);
+    if (!category?.issueKeys?.length) return;
+    if (categoryId !== state.currentCategory) {
+        switchCategory(categoryId);
+    }
+    state.healthIssueFilter = {
+        categoryId,
+        keys: new Set(category.issueKeys.map(String)),
+    };
+    $("#search").value = "";
+    state.currentFilter = "";
+    state.filterByCategory[state.currentCategory] = "";
+    state.currentPage = 1;
+    state.pageByCategory[state.currentCategory] = 1;
+    syncSearchClear();
+    syncFilterButtons();
+    applyFilter();
+    saveUiState();
+    document.querySelector(".pagination-top")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    showToast(`已筛选 ${category.name || categoryId} 问题产品`);
+}
+
 function handleStatusPanelClick(event) {
     const locateButton = event.target.closest("[data-health-locate]");
-    if (!locateButton) return;
-    locateHealthIssue(locateButton.dataset.healthLocate, locateButton.dataset.healthQuery);
+    if (locateButton) {
+        locateHealthIssue(locateButton.dataset.healthLocate, locateButton.dataset.healthQuery);
+        return;
+    }
+
+    const filterButton = event.target.closest("[data-health-filter]");
+    if (filterButton) {
+        showHealthIssueProducts(filterButton.dataset.healthFilter);
+    }
+}
+
+function closeStatusPanel() {
+    const panel = $("#statusPanel");
+    panel.className = "status-panel";
+    panel.innerHTML = "";
+    panel.setAttribute("aria-hidden", "true");
 }
 
 function showStatusPanel(message, stateName = "") {
     const panel = $("#statusPanel");
     panel.className = `status-panel visible${stateName ? ` ${stateName}` : ""}`;
     panel.innerHTML = `<div class="status-panel-content">${escapeHtml(message)}</div><button class="status-close" type="button" aria-label="关闭">×</button>`;
-    panel.querySelector(".status-close").onclick = () => {
-        panel.className = "status-panel";
-        panel.innerHTML = "";
-    };
+    panel.setAttribute("aria-hidden", "false");
+    panel.querySelector(".status-close").onclick = closeStatusPanel;
 }
 
 function showStatusHtmlPanel(html, stateName = "") {
     const panel = $("#statusPanel");
     panel.className = `status-panel visible${stateName ? ` ${stateName}` : ""}`;
     panel.innerHTML = `<div class="status-panel-content">${html}</div><button class="status-close" type="button" aria-label="关闭">×</button>`;
-    panel.querySelector(".status-close").onclick = () => {
-        panel.className = "status-panel";
-        panel.innerHTML = "";
-    };
+    panel.setAttribute("aria-hidden", "false");
+    panel.querySelector(".status-close").onclick = closeStatusPanel;
 }
 
 function setUpdateButtonsDisabled(disabled, activeType = "") {
@@ -916,8 +1164,20 @@ function startStatusCheck() {
                 }
                 clearInterval(state.statusTimer);
                 state.statusTimer = null;
-                if (data.log?.includes("✅")) showStatusPanel(data.log, "success");
-                else if (data.log?.includes("❌")) showStatusPanel(data.log, "error");
+                if (data.log?.includes("✅")) {
+                    refreshCatalogDataAfterUpdate()
+                        .then(() => {
+                            showStatusPanel(`${data.log}\n\n✓ 页面数据已自动刷新`, "success");
+                            setUpdateButtonsDisabled(false);
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            showStatusPanel(`${data.log}\n\n⚠️ 更新完成，但自动刷新页面数据失败，请手动刷新。`, "warning");
+                            setUpdateButtonsDisabled(false);
+                        });
+                    return;
+                }
+                if (data.log?.includes("❌")) showStatusPanel(data.log, "error");
                 else showStatusPanel("✓ 准备就绪", "success");
                 setUpdateButtonsDisabled(false);
             })
@@ -932,6 +1192,7 @@ function startStatusCheck() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    watchSystemTheme();
     loadCatalog()
         .then(initializeUI)
         .catch(error => {

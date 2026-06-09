@@ -13,7 +13,7 @@
             <h1>Car Model-产品清单</h1>
             <p id="metaLine">新版架构验证 · 正在加载数据...</p>
         </div>
-        <a class="legacy-link" href="/" title="返回稳定版">稳定版</a>
+        <a class="legacy-link" href="/legacy" title="打开旧版回退页">旧版</a>
     </header>
 
     <section id="statusPanel" class="status-panel" aria-live="polite"></section>
@@ -39,6 +39,8 @@
                     <button class="view-btn active" data-view="cards" title="卡片视图">📦</button>
                     <button id="themeBtn" class="theme-btn" title="切换主题">🌙</button>
                     <button id="healthBtn" class="health-btn" type="button" title="检查数据健康">🩺 数据健康 <span id="healthBadge" class="health-badge hidden"></span></button>
+                    <button id="healthExportBtn" class="health-btn" type="button" title="导出健康问题 CSV">⬇️ 导出问题</button>
+                    <button id="historyBtn" class="health-btn" type="button" title="查看更新历史">🕘 更新历史</button>
                 </div>
                 <div id="updateActions" class="action-group update-actions"></div>
             </div>

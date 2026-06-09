@@ -4,6 +4,7 @@ import threading
 
 from .brands import BRANDS_BY_ID
 from .files import backup_files, run_step
+from .history import append_update_history, now_iso
 from .summaries import load_update_summary, reset_update_summary
 
 
@@ -44,6 +45,9 @@ class UpdateManager:
         return {"status": "started", "message": f"{task['name']}更新任务已启动，请等待完成..."}
 
     def _run_task(self, task):
+        started_at = now_iso()
+        status = "success"
+        error = ""
         try:
             reset_update_summary(task["summary_path"])
             for log_message, step_name, script_name in task["steps"]:
@@ -55,7 +59,19 @@ class UpdateManager:
             self.last_summary = load_update_summary(task["summary_path"])
             self.last_log = task["summary"]()
         except Exception as exc:
+            status = "failed"
+            error = str(exc)
             self.last_log = f"❌ 更新出错：{exc}"
         finally:
+            append_update_history({
+                "brandId": task["id"],
+                "brandName": task["name"],
+                "status": status,
+                "startedAt": started_at,
+                "endedAt": now_iso(),
+                "summary": self.last_summary,
+                "log": self.last_log,
+                "error": error,
+            })
             self.running = False
             self.current_brand_id = None

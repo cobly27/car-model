@@ -5,6 +5,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 HTML_PATH = BASE_DIR / "MINI_GT_产品清单.html"
 PRODUCTS_PATH = BASE_DIR / "minigt_products.json"
+UPDATE_HISTORY_PATH = BASE_DIR / "update_history.json"
 
 SUMMARY_PATHS = {
     "ar": BASE_DIR / "ar_update_summary.json",

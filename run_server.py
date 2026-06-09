@@ -5,12 +5,13 @@ import os
 import subprocess
 import webbrowser
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, Response, jsonify, render_template, request, send_file
 
 from catalog.brands import update_config
 from catalog.config import BASE_DIR, HTML_PATH
 from catalog.data import load_catalog_response
-from catalog.health import catalog_health_response
+from catalog.health import catalog_health_csv, catalog_health_response
+from catalog.history import load_update_history
 from catalog.images import serve_inno_image, serve_topspeed_thumb
 from catalog.tasks import UpdateManager
 
@@ -21,7 +22,13 @@ update_manager = UpdateManager()
 
 @app.route("/")
 def serve_index():
-    """稳定版入口：继续提供已生成的旧 HTML。"""
+    """默认入口：新版轻量页面。"""
+    return render_template("catalog_v2.html")
+
+
+@app.route("/legacy")
+def serve_legacy():
+    """稳定版旧 HTML 回退入口。"""
     return send_file(HTML_PATH)
 
 
@@ -41,6 +48,25 @@ def catalog_data():
 def catalog_health():
     """返回只读数据健康检查结果，方便更新后快速回归。"""
     return jsonify(catalog_health_response())
+
+
+@app.route("/api/catalog-health.csv")
+def catalog_health_csv_download():
+    """导出当前健康问题 CSV。"""
+    return Response(
+        catalog_health_csv(),
+        headers={
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Disposition": "attachment; filename=catalog_health_issues.csv",
+        },
+    )
+
+
+@app.route("/api/update-history")
+def update_history():
+    """返回最近更新历史。"""
+    limit = max(1, min(int(request.args.get("limit", 20)), 80))
+    return jsonify({"history": load_update_history()[:limit]})
 
 
 @app.route("/api/update-config")
@@ -110,7 +136,7 @@ if __name__ == "__main__":
     print("MINI GT 产品清单服务器已启动")
     print("=" * 80)
     print("访问地址：http://localhost:5001")
-    print("新版入口：http://localhost:5001/v2")
+    print("旧版入口：http://localhost:5001/legacy")
     print("=" * 80)
 
     webbrowser.open("http://localhost:5001")
