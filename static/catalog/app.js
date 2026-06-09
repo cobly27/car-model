@@ -856,7 +856,7 @@ function showStatusPanel(message, stateName = "") {
     const panel = $("#statusPanel");
     panel.className = `status-panel visible${stateName ? ` ${stateName}` : ""}`;
     panel.innerHTML = `<div class="status-panel-content">${escapeHtml(message)}</div><button class="status-close" type="button" aria-label="关闭">×</button>`;
-    panel.querySelector("button").onclick = () => {
+    panel.querySelector(".status-close").onclick = () => {
         panel.className = "status-panel";
         panel.innerHTML = "";
     };
@@ -866,7 +866,7 @@ function showStatusHtmlPanel(html, stateName = "") {
     const panel = $("#statusPanel");
     panel.className = `status-panel visible${stateName ? ` ${stateName}` : ""}`;
     panel.innerHTML = `<div class="status-panel-content">${html}</div><button class="status-close" type="button" aria-label="关闭">×</button>`;
-    panel.querySelector("button").onclick = () => {
+    panel.querySelector(".status-close").onclick = () => {
         panel.className = "status-panel";
         panel.innerHTML = "";
     };
