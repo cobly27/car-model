@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Model-产品清单 V2</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e63946'/%3E%3Cpath d='M12 38h5l5-12h20l6 12h4c2.2 0 4 1.8 4 4v4h-6a7 7 0 0 1-14 0H28a7 7 0 0 1-14 0H8v-4c0-2.2 1.8-4 4-4Z' fill='white'/%3E%3Cpath d='M24 30h16l3.5 8h-23L24 30Z' fill='%231a1a2e' opacity='.9'/%3E%3Ccircle cx='21' cy='46' r='4' fill='%231a1a2e'/%3E%3Ccircle cx='43' cy='46' r='4' fill='%231a1a2e'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="/static/catalog/styles.css">
+</head>
+<body>
+    <header class="app-header">
+        <div>
+            <h1>Car Model-产品清单</h1>
+            <p id="metaLine">新版架构验证 · 正在加载数据...</p>
+        </div>
+        <a class="legacy-link" href="/" title="返回稳定版">稳定版</a>
+    </header>
+
+    <section id="statusPanel" class="status-panel" aria-live="polite"></section>
+
+    <main class="catalog-shell">
+        <section class="controls" aria-label="产品控制区">
+            <div class="control-row control-main">
+                <div class="search-wrap">
+                    <input id="search" type="text" placeholder="搜索产品名称或编号..." autocomplete="off">
+                    <button id="searchClearBtn" class="search-clear" type="button" title="清空搜索" aria-label="清空搜索">×</button>
+                </div>
+                <div id="statsGroup" class="stats-group"></div>
+            </div>
+
+            <div class="control-row control-actions">
+                <div class="action-group filter-actions">
+                    <select id="categorySelect" class="quick-filter category-select" aria-label="选择分类"></select>
+                    <button class="quick-filter status-filter" data-filter="Pre-Order">📦 Pre-Order</button>
+                    <button class="quick-filter status-filter" data-filter="Released">✅ Released</button>
+                    <button class="quick-filter status-filter" data-filter="Sold Out">❌ Sold Out</button>
+                    <button id="favoriteFilterBtn" class="quick-filter fav-filter" data-filter="fav">⭐ 收藏</button>
+                    <button class="view-btn" data-view="table" title="表格视图">📊</button>
+                    <button class="view-btn active" data-view="cards" title="卡片视图">📦</button>
+                    <button id="themeBtn" class="theme-btn" title="切换主题">🌙</button>
+                    <button id="healthBtn" class="health-btn" type="button" title="检查数据健康">🩺 数据健康 <span id="healthBadge" class="health-badge hidden"></span></button>
+                </div>
+                <div id="updateActions" class="action-group update-actions"></div>
+            </div>
+        </section>
+
+        <nav class="pagination pagination-top" aria-label="顶部分页"></nav>
+
+        <section id="loadingState" class="loading-state">正在加载产品数据...</section>
+        <section id="cardsView" class="cards-wrap" aria-label="卡片视图"></section>
+        <section id="tableView" class="table-wrap hidden" aria-label="表格视图">
+            <table>
+                <thead>
+                    <tr>
+                        <th>编号</th>
+                        <th>SKU</th>
+                        <th>产品名称</th>
+                        <th>状态</th>
+                        <th>图片</th>
+                        <th>收藏</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </section>
+
+        <nav class="pagination pagination-bottom" aria-label="底部分页"></nav>
+    </main>
+
+    <div id="modalOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-label="产品图片预览">
+        <button id="modalClose" class="modal-close" type="button" aria-label="关闭">×</button>
+        <button id="modalPrev" class="modal-nav modal-prev" type="button" aria-label="上一张">‹</button>
+        <div class="modal-content">
+            <img id="modalImg" alt="">
+            <div id="modalCaption" class="modal-caption"></div>
+            <div id="modalCounter" class="modal-counter"></div>
+        </div>
+        <button id="modalNext" class="modal-nav modal-next" type="button" aria-label="下一张">›</button>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <button id="backToTop" class="back-to-top" type="button" title="返回顶部">↑</button>
+
+    <script src="/static/catalog/app.js"></script>
+</body>
+</html>

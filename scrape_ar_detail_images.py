@@ -76,12 +76,14 @@ def load_existing_products():
 
 def save_progress(products, failed_ids):
     """保存抓取进度"""
+    failed_ids = list(dict.fromkeys(failed_ids))
+    success_count = len([p for p in products if p.get('detail_id') not in failed_ids and p.get('images')])
     with OUTPUT_PATH.open('w', encoding='utf-8') as f:
         json.dump({
             'products': products,
             'failed_ids': failed_ids,
             'total': len(products),
-            'success_count': len([p for p in products if p.get('images')]),
+            'success_count': success_count,
             'failed_count': len(failed_ids)
         }, f, ensure_ascii=False, indent=2)
 
@@ -98,29 +100,27 @@ def main():
     print(f"共有 {len(products)} 个产品需要抓取")
     print()
 
-    # 检查是否有已保存的进度
-    existing_data = {}
+    # 旧结果只用于提示；本次更新需要重新按 detail_id 抓取当前API列表。
     if OUTPUT_PATH.exists():
         try:
             with OUTPUT_PATH.open('r', encoding='utf-8') as f:
                 existing_data = json.load(f)
                 existing_products = existing_data.get('products', [])
-                print(f"找到已保存的进度：{len(existing_products)} 个产品已抓取")
+                print(f"找到旧详情图结果：{len(existing_products)} 个产品；本次将重新抓取当前列表")
         except:
             pass
 
     # 初始化失败ID列表
-    failed_ids = existing_data.get('failed_ids', []) if existing_data else []
+    failed_ids = []
 
     # 统计
-    start_idx = len([p for p in existing_data.get('products', []) if p.get('images')]) if existing_data else 0
     total_images = 0
 
-    print(f"从第 {start_idx + 1} 个产品开始抓取")
+    print("从第 1 个产品开始抓取")
     print()
 
     # 抓取每个产品的详情页图片
-    for i, product in enumerate(products[start_idx:], start_idx + 1):
+    for i, product in enumerate(products, 1):
         product_id = product['detail_id']
         product_name = product.get('name', '未知产品')
 

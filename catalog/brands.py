@@ -1,0 +1,162 @@
+"""Brand update configuration shared by server tasks and the v2 UI."""
+
+from .config import SUMMARY_PATHS
+from .summaries import (
+    format_ar_update_summary,
+    format_inno_update_summary,
+    format_minigt_update_summary,
+    format_poprace_update_summary,
+    format_spark_update_summary,
+    format_topspeed_update_summary,
+)
+
+
+BRANDS = [
+    {
+        "id": "minigt",
+        "name": "MINI GT产品",
+        "category_id": "mini-gt",
+        "endpoint": "/api/update-minigt",
+        "button_label": "🔄 更新 MINI GT 产品",
+        "running_label": "⏳ MINI GT 更新中...",
+        "started_message": "🚀 MINI GT 更新已开始，请耐心等待...",
+        "start_log": "开始更新 MINI GT 产品...",
+        "summary_path": SUMMARY_PATHS["minigt"],
+        "summary": format_minigt_update_summary,
+        "steps": [
+            ("1/6 备份当前文件...", None, None),
+            ("2/6 抓取 MINI GT 产品列表...", "抓取 MINI GT 产品列表", "scrape_minigt_api.py"),
+            ("3/6 合并 MINI GT 产品清单...", "合并 MINI GT 产品清单", "update_minigt_products_api.py"),
+            ("4/6 抓取新增/变更产品详情图...", "抓取 MINI GT 详情图", "scrape_minigt_detail_images.py"),
+            ("5/6 更新 MINI GT 图片数据...", "更新 MINI GT 图片数据", "update_minigt_detail_images.py"),
+            ("6/6 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "ar",
+        "name": "AR产品",
+        "category_id": "ar",
+        "endpoint": "/api/update-ar",
+        "button_label": "🔄 更新 AR 产品",
+        "running_label": "⏳ AR 更新中...",
+        "started_message": "🚀 AR 更新已开始，请耐心等待...",
+        "start_log": "开始更新AR产品...",
+        "summary_path": SUMMARY_PATHS["ar"],
+        "summary": format_ar_update_summary,
+        "steps": [
+            ("1/6 备份当前文件...", None, None),
+            ("2/6 抓取AR产品列表...", "抓取AR产品列表", "scrape_ar_api.py"),
+            ("3/6 合并AR产品清单...", "合并AR产品清单", "update_ar_products_api_v2.py"),
+            ("4/6 抓取产品详情图片（可能需要较长时间）...", "抓取产品详情图片", "scrape_ar_detail_images.py"),
+            ("5/6 更新产品图片数据...", "更新产品图片数据", "update_ar_detail_images.py"),
+            ("6/6 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "topspeed",
+        "name": "TOP SPEED产品",
+        "category_id": "topspeed",
+        "endpoint": "/api/update-topspeed",
+        "button_label": "🔄 更新 TOP SPEED 产品",
+        "running_label": "⏳ TOP SPEED 更新中...",
+        "started_message": "🚀 TOP SPEED 更新已开始，请耐心等待...",
+        "start_log": "开始更新 TOP SPEED 产品...",
+        "summary_path": SUMMARY_PATHS["topspeed"],
+        "summary": format_topspeed_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 TOP SPEED 全部分类和详情...", "抓取 TOP SPEED 产品", "scrape_topspeed_api.py"),
+            ("3/4 合并 TOP SPEED 产品清单...", "合并 TOP SPEED 产品清单", "update_topspeed_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "spark",
+        "name": "SPARK产品",
+        "category_id": "spark",
+        "endpoint": "/api/update-spark",
+        "button_label": "🔄 更新 SPARK 产品",
+        "running_label": "⏳ SPARK 更新中...",
+        "started_message": "🚀 SPARK 更新已开始，请耐心等待...",
+        "start_log": "开始更新 SPARK 产品...",
+        "summary_path": SUMMARY_PATHS["spark"],
+        "summary": lambda: format_spark_update_summary("spark", "SPARK"),
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 SPARK 1:43 产品...", "抓取 SPARK 产品", "scrape_spark_api.py"),
+            ("3/4 合并 SPARK 产品清单...", "合并 SPARK 产品清单", "update_spark_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "spark64",
+        "name": "SPARK 1:64产品",
+        "category_id": "spark64",
+        "endpoint": "/api/update-spark64",
+        "button_label": "🔄 更新 SPARK 1:64 产品",
+        "running_label": "⏳ SPARK 1:64 更新中...",
+        "started_message": "🚀 SPARK 1:64 更新已开始，请耐心等待...",
+        "start_log": "开始更新 SPARK 1:64 产品...",
+        "summary_path": SUMMARY_PATHS["spark64"],
+        "summary": lambda: format_spark_update_summary("spark64", "SPARK 1:64"),
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 SPARK 1:64 产品...", "抓取 SPARK 1:64 产品", "scrape_spark64_api.py"),
+            ("3/4 合并 SPARK 1:64 产品清单...", "合并 SPARK 1:64 产品清单", "update_spark64_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "inno",
+        "name": "INNO产品",
+        "category_id": "inno",
+        "endpoint": "/api/update-inno",
+        "button_label": "🔄 更新 INNO 产品",
+        "running_label": "⏳ INNO 更新中...",
+        "started_message": "🚀 INNO 更新已开始，请耐心等待...",
+        "start_log": "开始更新 INNO 产品...",
+        "summary_path": SUMMARY_PATHS["inno"],
+        "summary": format_inno_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 INNO 1:64 产品和详情图...", "抓取 INNO 产品", "scrape_inno_api.py"),
+            ("3/4 合并 INNO 产品清单...", "合并 INNO 产品清单", "update_inno_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "poprace",
+        "name": "POP RACE产品",
+        "category_id": "poprace",
+        "endpoint": "/api/update-poprace",
+        "button_label": "🔄 更新 POP RACE 产品",
+        "running_label": "⏳ POP RACE 更新中...",
+        "started_message": "🚀 POP RACE 更新已开始，请耐心等待...",
+        "start_log": "开始更新 POP RACE 产品...",
+        "summary_path": SUMMARY_PATHS["poprace"],
+        "summary": format_poprace_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 POP RACE 产品...", "抓取 POP RACE 产品", "scrape_poprace_api.py"),
+            ("3/4 合并 POP RACE 产品清单...", "合并 POP RACE 产品清单", "update_poprace_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+]
+
+BRANDS_BY_ID = {brand["id"]: brand for brand in BRANDS}
+
+
+def update_config():
+    return [
+        {
+            "id": brand["id"],
+            "name": brand["name"],
+            "categoryId": brand["category_id"],
+            "endpoint": brand["endpoint"],
+            "label": brand["button_label"],
+            "runningText": brand["running_label"],
+            "startText": brand["started_message"],
+        }
+        for brand in BRANDS
+    ]

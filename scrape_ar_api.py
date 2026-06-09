@@ -10,6 +10,7 @@ BASE_URL = "https://www.armodel.com.cn"
 API_URL = f"{BASE_URL}/api/product/list"
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_PATH = BASE_DIR / 'ar_products_api.json'
+SUMMARY_PATH = BASE_DIR / 'ar_update_summary.json'
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -23,6 +24,7 @@ def fetch_all_products():
     all_products = []
     page = 1
     limit = 100
+    total_count = 0
 
     print("开始抓取AR产品...")
     print()
@@ -39,7 +41,11 @@ def fetch_all_products():
 
             if data.get('code') in [1, '1', 'success']:
                 products = data.get('data', {}).get('list', [])
-                total_count = data.get('data', {}).get('count', len(products))
+                raw_total_count = data.get('data', {}).get('count', len(products))
+                try:
+                    total_count = int(raw_total_count)
+                except (TypeError, ValueError):
+                    total_count = len(products)
 
                 if not products:
                     print(f"第 {page} 页没有产品，停止抓取")
@@ -85,6 +91,16 @@ def fetch_all_products():
 
     print()
     print(f"共抓取 {len(all_products)} 个产品")
+    summary = {
+        'source': BASE_URL,
+        'fetched_count': len(all_products),
+        'api_total_count': total_count,
+        'page_count': page,
+        'page_size': limit,
+    }
+    with SUMMARY_PATH.open('w', encoding='utf-8') as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+
     return all_products
 
 def fetch_product_details(product_id):

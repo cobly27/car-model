@@ -3,10 +3,12 @@
 import json
 import re
 from pathlib import Path
+from urllib.parse import quote
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_PATH = BASE_DIR / 'minigt_products.json'
 HTML_PATH = BASE_DIR / 'MINI_GT_产品清单.html'
+PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20400%20300'%3E%3Crect%20width='400'%20height='300'%20fill='%23f2f4f8'/%3E%3Ctext%20x='200'%20y='158'%20font-family='Arial'%20font-size='24'%20fill='%23909aaa'%20text-anchor='middle'%3ENo%20image%3C/text%3E%3C/svg%3E"
 
 # ── 读取数据 ──
 with DATA_PATH.open('r', encoding='utf-8') as f:
@@ -33,7 +35,7 @@ for cat in categories:
 seen = set()
 unique = []
 for p in all_products_with_category:
-    key = (p['sku'], p['name'], p['image'])
+    key = (p.get('sku', ''), p.get('name', ''), p.get('image', ''))
     if key not in seen:
         seen.add(key)
         unique.append(p)
@@ -54,14 +56,17 @@ count_soldout = sum(1 for p in products if p.get('status') == 'Sold Out')
 def esc(s):
     return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 
-# ── 生成大类切换标签 ──
+# ── 生成大类切换选项 ──
 category_tabs_html = ''
+category_options_html = ''
 for cat in categories:
     cat_id = esc(cat.get('id', ''))
     cat_name = esc(cat.get('name', ''))
     cat_count = len(cat.get('products', []))
     active_class = 'active' if cat == categories[0] else ''
     category_tabs_html += f'<button class="category-tab {active_class}" data-category="{cat_id}" onclick="switchCategory(\'{cat_id}\')">{cat_name} ({cat_count})</button>\n        '
+    selected_attr = ' selected' if cat == categories[0] else ''
+    category_options_html += f'<option value="{cat_id}"{selected_attr}>全部 · {cat_name} ({cat_count})</option>\n        '
 
 # ── 生成分类统计数据 ──
 category_stats = {}
@@ -92,28 +97,52 @@ def product_url(detail_id, category_id='mini-gt'):
     """生成官网产品详情链接，根据分类返回不同URL"""
     if category_id == 'ar':
         return f'http://www.armodel.com.cn/product/detail.html?id={detail_id}'
+    if category_id == 'topspeed':
+        return f'https://topspeed.tsm-models.com/index.php?action=product-detail&id={detail_id}'
+    if category_id in ('spark', 'spark64'):
+        return f'https://www.sparkmodel.com/en/products/{detail_id}'
+    if category_id == 'inno':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'inno'), None)
+        if product and product.get('inno_url'):
+            return product.get('inno_url')
+        return 'https://www.inno-models.com/our-products/?jsf=jet-engine:shop-loop&tax=pa_scale:1-64'
+    if category_id == 'poprace':
+        return 'https://www.xcartoys.com/S_series'
     return f'https://minigt.tsm-models.com/index.php?action=product-detail&id={detail_id}'
+
+def preview_image_url(image, category_id='mini-gt'):
+    if category_id == 'topspeed' and image.startswith('https://topspeed.tsm-models.com/upload/'):
+        return f'/api/topspeed-thumb?src={quote(image, safe="")}'
+    if category_id == 'inno' and image.startswith('https://www.inno-models.com/wp-content/uploads/'):
+        return f'/api/inno-image?src={quote(image, safe="")}'
+    return image
+
+def modal_image_url(image, category_id='mini-gt'):
+    if category_id == 'inno' and image.startswith('https://www.inno-models.com/wp-content/uploads/'):
+        return f'/api/inno-image?src={quote(image, safe="")}'
+    return image
 
 def get_images(p):
     """获取产品图片列表，对 MINI GT 按封面图、实物图排序，其他分类保留原顺序"""
     images = []
-    if p.get('images') and len(p['images']) > 0:
+    product_images = [img for img in p.get('images', []) if img]
+    if product_images:
         # 只对含 picfile 路径进行排序，AR 等其他分类保留原顺序
-        has_picfile = any('picfile' in img or 'picfile_list' in img for img in p['images'])
+        has_picfile = any('picfile' in img or 'picfile_list' in img for img in product_images)
         if has_picfile:
             # 分离 picfile_list 和 picfile 的图片
-            list_images = [img for img in p['images'] if 'picfile_list' in img]
-            main_images = [img for img in p['images'] if 'picfile/' in img and 'picfile_list' not in img]
+            list_images = [img for img in product_images if 'picfile_list' in img]
+            main_images = [img for img in product_images if 'picfile/' in img and 'picfile_list' not in img]
             # 按顺序：封面图（主图）、实物图 1、实物图 2
             images = main_images + list_images
             if not images:
-                images = p['images']
+                images = product_images
         else:
             # 非 MINI GT 图片保持原顺序
-            images = p['images']
+            images = product_images
     elif p.get('image'):
         images = [p['image']]
-    return images
+    return images or [PLACEHOLDER_IMAGE]
 
 table_rows = ''
 card_items = ''
@@ -123,15 +152,21 @@ for i, p in enumerate(products):
     pid = p.get('detail_id', '')
     st = p.get('status', '')
     sc = status_class(st)
+    category_id = p.get('categoryId', 'mini-gt')
     images = get_images(p)
+    preview_limit = 1 if category_id == 'topspeed' else 3
+    preview_images = images[:preview_limit]
+    modal_images = [modal_image_url(img, category_id) for img in images]
+    remaining_image_count = max(0, len(images) - preview_limit)
     
     # 生成图片 HTML - 每张图单独绑定点击事件（添加懒加载）
     img_html = ''
-    for idx, img in enumerate(images[:3]):
-        img_html += f'<img src="{esc(img)}" alt="{name}" class="thumb-img img-lazy" loading="lazy" onclick="event.stopPropagation();openMultiModalFromElement(this.closest(\'tr\') || this.closest(\'.card-item\'), {idx})" onerror="handleImageError(this, {idx})">'
+    for idx, img in enumerate(preview_images):
+        preview_img = preview_image_url(img, category_id)
+        img_html += f'<img src="{esc(preview_img)}" data-src="{esc(preview_img)}" alt="{name}" class="thumb-img img-lazy" loading="lazy" onclick="event.stopPropagation();openMultiModalFromElement(this.closest(\'tr\') || this.closest(\'.card-item\'), {idx})" onerror="handleImageError(this, {idx})">'
     
     # 生成图片数据的 JSON 字符串，用于 data 属性
-    images_json_data = json.dumps(images, ensure_ascii=False)
+    images_json_data = json.dumps(modal_images, ensure_ascii=False)
     images_json_escaped = esc(images_json_data)
     
     # 表格行 - 使用索引从 JS 数组获取数据
@@ -159,18 +194,19 @@ for i, p in enumerate(products):
         sku, safe_name, st, '', i + 1,
         product_url(pid, p.get('categoryId', 'mini-gt')), sc,
         img_html,
-        f'<span class="img-count" onclick="event.stopPropagation();openMultiModalFromElement(this.closest(\'tr\'), 0)">+{len(images)-3}</span>' if len(images) > 3 else '',
+        f'<span class="img-count" onclick="event.stopPropagation();openMultiModalFromElement(this.closest(\'tr\'), 0)">+{remaining_image_count}</span>' if remaining_image_count > 0 else '',
         safe_name_data_attr,
         images_json_escaped,
-        p.get('categoryId', 'mini-gt'),
-        product_url(pid, p.get('categoryId', 'mini-gt'))
+        category_id,
+        product_url(pid, category_id)
     )
     
     # 卡片项
+    no_image_class = 'is-placeholder' if images[0] == PLACEHOLDER_IMAGE else ''
     card_items += '''
 <div class="card-item" data-sku="{0}" data-name="{9}" data-status="{2}" data-index="{4}" data-category="{11}" data-images="{10}">
-    <div class="card-img" onclick="openMultiModalFromElement(this.closest(\'.card-item\'), 0)">
-        <img src="{5}" alt="{1}" loading="lazy" onload="this.classList.add('loaded')">
+    <div class="card-img {13}" onclick="openMultiModalFromElement(this.closest(\'.card-item\'), 0)">
+        <img src="{5}" data-src="{5}" alt="{1}" loading="lazy" onload="this.classList.add('loaded')" onerror="handleImageError(this, 0)">
         <div class="card-img-overlay">
             <span class="card-img-count">{6} 图</span>
         </div>
@@ -185,12 +221,13 @@ for i, p in enumerate(products):
     </div>
 </div>'''.format(
         sku, safe_name, st, '', i + 1,
-        esc(images[0]), len(images), sc,
+        esc(preview_image_url(images[0], category_id)), len(images), sc,
         '',
         safe_name_data_attr,
         images_json_escaped,
-        p.get('categoryId', 'mini-gt'),
-        product_url(pid, p.get('categoryId', 'mini-gt'))
+        category_id,
+        product_url(pid, category_id),
+        no_image_class
     )
 
 # 模板使用单大括号，避免处理问题
@@ -200,6 +237,7 @@ html = '''<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Car Model-产品清单 ({len_products} 款)</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e63946'/%3E%3Cpath d='M12 38h5l5-12h20l6 12h4c2.2 0 4 1.8 4 4v4h-6a7 7 0 0 1-14 0H28a7 7 0 0 1-14 0H8v-4c0-2.2 1.8-4 4-4Z' fill='white'/%3E%3Cpath d='M24 30h16l3.5 8h-23L24 30Z' fill='%231a1a2e' opacity='.9'/%3E%3Ccircle cx='21' cy='46' r='4' fill='%231a1a2e'/%3E%3Ccircle cx='43' cy='46' r='4' fill='%231a1a2e'/%3E%3C/svg%3E">
 <style>
 * { margin:0; padding:0; box-sizing: border-box; }
 :root {
@@ -238,17 +276,42 @@ body {
 
 /* Controls */
 .controls {
-    padding: 14px 30px;
+    padding: 14px 30px 12px;
     background: var(--card);
     border-bottom: 1px solid var(--border);
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
     position: sticky;
     top: 0;
     z-index: 40;
     transition: background 0.3s;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+}
+.control-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+}
+.control-main {
+    justify-content: space-between;
+}
+.control-main .search-wrap {
+    flex: 1 1 420px;
+    max-width: 720px;
+}
+.control-actions {
+    justify-content: space-between;
+    padding-top: 2px;
+}
+.action-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
 }
 .controls input, .controls select, .controls button {
     padding: 8px 14px;
@@ -266,16 +329,58 @@ body {
     box-shadow: 0 0 0 2px rgba(230,57,70,.1);
 }
 .controls input { min-width: 260px; }
+.search-wrap {
+    position: relative;
+    display: flex;
+    flex: 0 1 360px;
+    min-width: 260px;
+}
+.search-wrap input {
+    width: 100%;
+    min-width: 0;
+    padding-right: 38px;
+}
+.search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.search-clear.visible {
+    display: flex;
+}
+.search-clear:hover {
+    background: var(--border);
+    color: var(--text);
+}
+.control-hidden {
+    display: none !important;
+}
 
 /* Quick filters */
 .quick-filters {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    align-items: center;
 }
 .quick-filter {
-    padding: 6px 12px;
-    border-radius: 16px;
+    min-height: 36px;
+    padding: 7px 13px;
+    border-radius: 10px;
     font-size: 12px;
     cursor: pointer;
     border: 1px solid var(--border);
@@ -307,7 +412,9 @@ body {
     overflow: hidden;
 }
 .view-btn {
-    padding: 8px 14px;
+    width: 38px;
+    height: 36px;
+    padding: 0;
     border: none;
     background: transparent;
     cursor: pointer;
@@ -327,6 +434,7 @@ body {
     color: #fff !important;
     border: none !important;
     cursor: pointer;
+    min-width: 42px;
 }
 body.dark .theme-btn {
     background: #f1c40f !important;
@@ -340,6 +448,7 @@ body.dark .theme-btn {
     border: none !important;
     cursor: pointer;
     font-weight: 600;
+    min-height: 36px;
     transition: opacity 0.2s, transform 0.2s;
 }
 .update-btn:hover {
@@ -355,11 +464,14 @@ body.dark .theme-btn {
 /* Status Panel */
 .status-panel {
     display: none;
+    position: relative;
     padding: 12px 20px;
+    padding-right: 48px;
     background: #fff3cd;
     color: #856404;
     font-size: 14px;
     border-bottom: 1px solid #ffeaa7;
+    white-space: pre-line;
     animation: slideDown 0.3s ease;
 }
 @keyframes slideDown {
@@ -379,14 +491,45 @@ body.dark .theme-btn {
     color: #721c24;
     border-color: #f5c6cb;
 }
+.status-panel .status-message {
+    display: block;
+}
+.status-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.08);
+    color: inherit;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.75;
+}
+.status-close:hover {
+    opacity: 1;
+    background: rgba(0,0,0,0.14);
+}
+body.dark .status-close {
+    background: rgba(255,255,255,0.12);
+}
+body.dark .status-close:hover {
+    background: rgba(255,255,255,0.2);
+}
 
 /* Stats */
 .stats-group {
-    margin-left: auto;
     display: flex;
     gap: 8px;
     align-items: center;
     flex-wrap: wrap;
+    justify-content: flex-end;
 }
 .stat-badge {
     display: inline-flex;
@@ -429,7 +572,7 @@ th .sort-arrow { font-size: 10px; margin-left: 4px; opacity: .3; }
 th.sorted .sort-arrow { opacity: 1; color: var(--red); }
 td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; transition: background .15s; }
 tr:hover td { background: var(--bg); }
-.hidden { display: none; }
+.hidden { display: none !important; }
 
 /* Table columns */
 .num { width: 50px; color: var(--text-secondary); text-align: center; }
@@ -540,17 +683,20 @@ tr:hover .copy-name-btn { opacity: .6; }
 /* Card view */
 .cards-wrap {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(218px, 1fr));
     gap: 16px;
     padding: 20px;
 }
 .cards-wrap.hidden { display: none; }
 .card-item {
     background: var(--card);
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 12px var(--shadow);
     transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    min-height: 366px;
 }
 .card-item:hover {
     transform: translateY(-4px);
@@ -558,25 +704,45 @@ tr:hover .copy-name-btn { opacity: .6; }
 }
 .card-img {
     aspect-ratio: 4/3;
-    background: var(--border);
+    background: linear-gradient(135deg, rgba(245,247,250,0.98), rgba(226,232,240,0.98));
     overflow: hidden;
     cursor: pointer;
     position: relative;
+}
+body.dark .card-img {
+    background: linear-gradient(135deg, #20243a, #151827);
 }
 .card-img img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
-.card-img.no-img::after {
-    content: '🖼️';
+.card-img.is-placeholder img {
+    object-fit: contain;
+    opacity: 0.72;
+}
+.card-img.is-placeholder::after {
+    content: '官网暂无图片';
     position: absolute;
-    inset: 0;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 40px;
-    opacity: 0.5;
+    width: max-content;
+    max-width: calc(100% - 24px);
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.78);
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    pointer-events: none;
+}
+body.dark .card-img.is-placeholder::after {
+    background: rgba(15,15,26,0.82);
+    color: #b9c0cf;
 }
 .card-img-overlay {
     position: absolute;
@@ -597,7 +763,12 @@ tr:hover .copy-name-btn { opacity: .6; }
     border-radius: 12px;
     font-size: 12px;
 }
-.card-body { padding: 12px; }
+.card-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
 .card-sku {
     font-family: "SF Mono", "Fira Code", Monaco, monospace;
     font-size: 12px;
@@ -606,6 +777,7 @@ tr:hover .copy-name-btn { opacity: .6; }
     margin-bottom: 4px;
     cursor: pointer;
     display: inline-block;
+    min-height: 18px;
 }
 .card-name {
     font-size: 13px;
@@ -615,6 +787,11 @@ tr:hover .copy-name-btn { opacity: .6; }
     text-decoration: none;
     display: block;
     cursor: pointer;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 73px;
 }
 .card-name:hover {
     text-decoration: underline;
@@ -624,6 +801,8 @@ tr:hover .copy-name-btn { opacity: .6; }
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: auto;
+    gap: 10px;
 }
 .card-footer .fav-btn { font-size: 18px; padding: 0; }
 
@@ -716,32 +895,13 @@ tr:hover .copy-name-btn { opacity: .6; }
     margin-top: 5px;
 }
 
-/* Category Tabs */
-.category-tabs {
-    display: flex;
-    gap: 8px;
-    padding: 12px 20px;
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-}
-.category-tab {
-    padding: 8px 16px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    border-radius: 20px;
+/* Category selector */
+.category-select {
+    min-width: 210px;
+    font-weight: 700;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
-    transition: all 0.2s;
-    color: var(--text);
 }
-.category-tab:hover {
-    border-color: var(--red);
-    color: var(--red);
-}
-.category-tab.active {
+.category-select.active {
     background: var(--red);
     color: #fff;
     border-color: var(--red);
@@ -806,6 +966,12 @@ body.dark .toast { background: #fff; color: #333; }
     padding: 20px;
     flex-wrap: wrap;
 }
+.pagination-top {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    padding: 12px 20px;
+}
 .pagination button {
     padding: 8px 14px;
     border: 1px solid var(--border);
@@ -843,23 +1009,60 @@ body.dark .toast { background: #fff; color: #333; }
     cursor: pointer;
     font-size: 14px;
 }
+.page-jump {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+.page-jump input {
+    width: 64px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+}
+.page-jump input:focus {
+    outline: none;
+    border-color: var(--red);
+    box-shadow: 0 0 0 2px rgba(230,57,70,.1);
+}
+.page-jump input:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
 
 /* Mobile */
 @media (max-width: 768px) {
     .header { padding: 16px; }
     .header h1 { font-size: 18px; }
     .header p { font-size: 11px; }
-    .controls { padding: 10px 12px; gap: 8px; }
+    .controls { padding: 10px 12px; gap: 10px; }
+    .control-main { justify-content: flex-start; }
+    .control-actions { justify-content: flex-start; }
+    .action-group, .update-actions { width: 100%; }
+    .update-actions .update-btn { flex: 1 1 220px; }
     .controls input { min-width: 0; flex: 1 1 200px; }
+    .search-wrap { min-width: 0; flex: 1 1 100%; }
     .stats-group { margin-left: 0; width: 100%; justify-content: flex-start; }
     .quick-filters { width: 100%; }
+    .quick-filter { flex: 1 1 auto; }
+    .category-select { flex-basis: 100%; }
     .cards-wrap { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding: 12px; }
+    .card-item { min-height: 320px; }
+    .card-name { -webkit-line-clamp: 5; min-height: 88px; }
     .modal-nav { display: none; }
     #backToTop { bottom: 20px; right: 16px; width: 38px; height: 38px; font-size: 16px; }
     .pagination { padding: 12px; gap: 6px; }
     .pagination button { padding: 6px 10px; font-size: 13px; }
     .pagination .page-info { font-size: 13px; padding: 6px 10px; }
     .pagination select { padding: 6px 8px; font-size: 13px; }
+    .page-jump { font-size: 13px; gap: 4px; }
+    .page-jump input { width: 56px; padding: 6px 8px; font-size: 13px; }
 }
 
 /* 图片懒加载样式 */
@@ -884,36 +1087,71 @@ body.dark .img-lazy {
     <p>数据来源: minigt.tsm-models.com · 抓取时间: 2026-06-04 · 共 {len_products} 款</p>
 </div>
 
-<!-- Category Tabs -->
-<div class="category-tabs">
-    {category_tabs_html}
-</div>
-
 <!-- Status Panel -->
 <div class="status-panel" id="statusPanel"></div>
 
 <!-- Controls -->
 <div class="controls">
-    <input type="text" id="search" placeholder="搜索产品名称或编号..." oninput="debouncedFilter()">
-    <div class="quick-filters">
-        <button class="quick-filter active" data-filter="" onclick="setQuickFilter(this)">全部</button>
-        <button class="quick-filter" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
-        <button class="quick-filter" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
-        <button class="quick-filter" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
+    <div class="control-row control-main">
+        <div class="search-wrap">
+            <input type="text" id="search" placeholder="搜索产品名称或编号..." oninput="debouncedFilter()" autocomplete="off">
+            <button class="search-clear" id="searchClearBtn" type="button" onclick="clearSearch()" title="清空搜索" aria-label="清空搜索">×</button>
+        </div>
+        <div class="stats-group" id="statsGroup">
+            <span class="stat-badge">共 {len_products}</span>
+            <span class="stat-badge released">✅ {count_released}</span>
+            <span class="stat-badge preorder">📦 {count_preorder}</span>
+            <span class="stat-badge soldout">❌ {count_soldout}</span>
+        </div>
+    </div>
+    <div class="control-row">
+        <div class="quick-filters">
+        <select class="quick-filter active category-select" id="categoryDropdownBtn" data-filter="" onchange="selectCategoryFromDropdown(this.value)" aria-label="选择分类">
+            {category_options_html}
+        </select>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
         <button class="quick-filter fav-only" data-filter="fav" onclick="setQuickFilter(this)">⭐ 收藏</button>
+        </div>
     </div>
-    <div class="view-toggle">
-        <button class="view-btn" data-view="table" onclick="setView(this)">📊</button>
-        <button class="view-btn active" data-view="cards" onclick="setView(this)">📦</button>
+    <div class="control-row control-actions">
+        <div class="action-group">
+            <div class="view-toggle">
+                <button class="view-btn" data-view="table" onclick="setView(this)" title="表格视图">📊</button>
+                <button class="view-btn active" data-view="cards" onclick="setView(this)" title="卡片视图">📦</button>
+            </div>
+            <button class="theme-btn" onclick="toggleTheme()" title="切换主题">🌙</button>
+        </div>
+        <div class="action-group update-actions">
+            <button class="update-btn" data-scope="mini-gt" id="updateMiniBtn" onclick="triggerUpdate('minigt')">🔄 更新 MINI GT 产品</button>
+            <button class="update-btn" data-scope="ar" id="updateArBtn" onclick="triggerUpdate('ar')">🔄 更新 AR 产品</button>
+            <button class="update-btn" data-scope="topspeed" id="updateTopSpeedBtn" onclick="triggerUpdate('topspeed')">🔄 更新 TOP SPEED 产品</button>
+            <button class="update-btn" data-scope="spark" id="updateSparkBtn" onclick="triggerUpdate('spark')">🔄 更新 SPARK 产品</button>
+            <button class="update-btn" data-scope="spark64" id="updateSpark64Btn" onclick="triggerUpdate('spark64')">🔄 更新 SPARK 1:64 产品</button>
+            <button class="update-btn" data-scope="inno" id="updateInnoBtn" onclick="triggerUpdate('inno')">🔄 更新 INNO 产品</button>
+        </div>
     </div>
-    <button class="update-btn" id="updateBtn" onclick="triggerUpdate()">🔄 更新 AR 产品</button>
-    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
-    <div class="stats-group" id="statsGroup">
-        <span class="stat-badge">共 {len_products}</span>
-        <span class="stat-badge released">✅ {count_released}</span>
-        <span class="stat-badge preorder">📦 {count_preorder}</span>
-        <span class="stat-badge soldout">❌ {count_soldout}</span>
-    </div>
+</div>
+
+<!-- Top Pagination -->
+<div class="pagination pagination-top" id="paginationTop">
+    <button onclick="goToFirstPage()" id="btnFirstTop">首页</button>
+    <button onclick="goToPrevPage()" id="btnPrevTop">上一页</button>
+    <span class="page-info" id="pageInfoTop">第 1 页 / 共 1 页</span>
+    <label class="page-jump">
+        跳至
+        <input class="page-jump-input" id="pageJumpTop" type="number" min="1" value="1" inputmode="numeric" onkeydown="handlePageJumpKey(event)" onchange="jumpToPageInput(this)">
+        页
+    </label>
+    <button class="page-jump-btn" onclick="jumpToPageInput(document.getElementById('pageJumpTop'))">跳转</button>
+    <button onclick="goToNextPage()" id="btnNextTop">下一页</button>
+    <button onclick="goToLastPage()" id="btnLastTop">末页</button>
+    <select id="pageSizeTop" onchange="changePageSize(this.value)">
+        <option value="20" selected>20/页</option>
+        <option value="50">50/页</option>
+        <option value="100">100/页</option>
+    </select>
 </div>
 
 <!-- Table View -->
@@ -945,9 +1183,15 @@ body.dark .img-lazy {
     <button onclick="goToFirstPage()" id="btnFirst">首页</button>
     <button onclick="goToPrevPage()" id="btnPrev">上一页</button>
     <span class="page-info" id="pageInfo">第 1 页 / 共 1 页</span>
+    <label class="page-jump">
+        跳至
+        <input class="page-jump-input" id="pageJumpBottom" type="number" min="1" value="1" inputmode="numeric" onkeydown="handlePageJumpKey(event)" onchange="jumpToPageInput(this)">
+        页
+    </label>
+    <button class="page-jump-btn" onclick="jumpToPageInput(document.getElementById('pageJumpBottom'))">跳转</button>
     <button onclick="goToNextPage()" id="btnNext">下一页</button>
     <button onclick="goToLastPage()" id="btnLast">末页</button>
-    <select onchange="changePageSize(this.value)">
+    <select id="pageSizeBottom" onchange="changePageSize(this.value)">
         <option value="20" selected>20/页</option>
         <option value="50">50/页</option>
         <option value="100">100/页</option>
@@ -981,12 +1225,18 @@ const productsData = PRODUCTS_JSON_PLACEHOLDER;
 
 // 分类统计数据
 const categoryStats = CATEGORY_STATS_PLACEHOLDER;
+const placeholderImage = PLACEHOLDER_IMAGE_PLACEHOLDER;
 
 // Global state
 let currentImages = [];
 let currentImageIndex = 0;
 let currentModalName = '';
+let currentModalCategory = 'mini-gt';
 const preloadedImages = new Set();
+const imageLoadCache = new Map();
+const imageReady = new Set();
+const imageFailed = new Set();
+let modalLoadToken = 0;
 let sortState = { col: '', dir: 1 };
 let currentFilter = '';
 // 兼容旧数据：同时读取两个键名
@@ -1005,7 +1255,15 @@ let currentCategory = 'mini-gt';
 const categoryPagination = {};
 const categoryCurrentFilter = {};
 const categoryCurrentPage = {};
-const categoryPageSize = {};
+const categoryScopedFilters = {
+    'mini-gt': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'ar': new Set(['', 'fav']),
+    'topspeed': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'spark': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'spark64': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'inno': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'poprace': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav'])
+};
 
 function readElementImages(element) {
     if (!element || !element.dataset.images) return [];
@@ -1018,35 +1276,97 @@ function readElementImages(element) {
     }
 }
 
-function preloadImage(src) {
-    if (!src || preloadedImages.has(src)) return;
-    preloadedImages.add(src);
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'image';
-    link.href = src;
-    document.head.appendChild(link);
-    const img = new Image();
-    img.decoding = 'async';
-    img.src = src;
+function isHeavyImageCategory(categoryId) {
+    return categoryId === 'topspeed';
+}
+
+function elementUsesHeavyImages(element) {
+    return isHeavyImageCategory(element?.dataset?.category || '');
+}
+
+function preloadImage(src, priority = 'auto') {
+    if (!src) return Promise.resolve(false);
+    if (imageLoadCache.has(src)) return imageLoadCache.get(src);
+
+    if (!preloadedImages.has(src) && !src.startsWith('data:')) {
+        preloadedImages.add(src);
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = src;
+        document.head.appendChild(link);
+    }
+
+    const promise = new Promise(resolve => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.fetchPriority = priority;
+        img.onload = () => {
+            imageReady.add(src);
+            imageFailed.delete(src);
+            resolve(true);
+        };
+        img.onerror = () => {
+            imageFailed.add(src);
+            resolve(false);
+        };
+        img.src = src;
+    });
+
+    imageLoadCache.set(src, promise);
+    return promise;
+}
+
+function markImageLoaded(img) {
+    if (!img) return;
+    if (img.complete && img.naturalWidth > 0) {
+        img.classList.add('loaded');
+    }
+}
+
+function activateImage(img, priority = 'high') {
+    if (!img) return;
+    img.classList.add('img-lazy');
+    img.removeAttribute('loading');
+    img.fetchPriority = priority;
+    img.addEventListener('load', () => img.classList.add('loaded'), {once: true});
+    img.addEventListener('error', () => img.classList.add('loaded'), {once: true});
+    markImageLoaded(img);
+    const src = img.dataset.src || img.getAttribute('src') || img.currentSrc;
+    if (!src) return;
+    if (!img.getAttribute('src')) {
+        img.src = src;
+    }
+    preloadImage(src);
+}
+
+function activateVisibleImages(items) {
+    if (currentView !== 'cards') return;
+    if (isHeavyImageCategory(currentCategory)) {
+        items.slice(0, 8).forEach(item => activateImage(item.querySelector('.card-img img'), 'high'));
+        return;
+    }
+    items.forEach(item => activateImage(item.querySelector('.card-img img'), 'high'));
 }
 
 function preloadProductImages(element, limit = 3) {
+    if (elementUsesHeavyImages(element)) return;
     const images = readElementImages(element);
-    images.slice(1, limit).forEach(preloadImage);
+    images.slice(1, limit).forEach(src => preloadImage(src, 'high'));
 }
 
 function preloadCardCover(element, eager = false) {
+    if (elementUsesHeavyImages(element)) return;
     const img = element?.querySelector('.card-img img');
     const src = img?.getAttribute('src');
     if (img && eager) {
-        img.loading = 'eager';
-        img.fetchPriority = 'high';
+        activateImage(img, 'high');
     }
     preloadImage(src);
 }
 
 function preloadPageCovers(items, eager = false) {
+    if (isHeavyImageCategory(currentCategory)) return;
     items.forEach(item => preloadCardCover(item, eager));
 }
 
@@ -1065,6 +1385,8 @@ function preloadPageCoversInChunks(items) {
 
 function preloadUpcomingPageCovers(visibleRows, endIndex) {
     if (currentView !== 'cards') return;
+    if (isHeavyImageCategory(currentCategory)) return;
+    if (document.getElementById('search')?.value.trim()) return;
     const nextPageStart = endIndex;
     const nextPageEnd = Math.min(nextPageStart + pageSize, visibleRows.length);
     if (nextPageStart >= nextPageEnd) return;
@@ -1076,8 +1398,42 @@ function preloadModalNeighbors() {
     if (!currentImages || currentImages.length < 2) return;
     const nextIndex = (currentImageIndex + 1) % currentImages.length;
     const prevIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
-    preloadImage(currentImages[nextIndex]);
-    preloadImage(currentImages[prevIndex]);
+    preloadImage(currentImages[nextIndex], 'high');
+    if (!isHeavyImageCategory(currentModalCategory)) {
+        preloadImage(currentImages[prevIndex], 'high');
+    }
+}
+
+function preloadModalAllImages(startIndex = currentImageIndex) {
+    if (!currentImages || currentImages.length === 0) return;
+    const total = currentImages.length;
+    const priorityIndexes = isHeavyImageCategory(currentModalCategory)
+        ? new Set([startIndex, (startIndex + 1) % total])
+        : new Set([
+            startIndex,
+            (startIndex + 1) % total,
+            (startIndex - 1 + total) % total,
+        ]);
+
+    priorityIndexes.forEach(index => {
+        preloadImage(currentImages[index], 'high');
+    });
+
+    if (isHeavyImageCategory(currentModalCategory)) return;
+
+    const remaining = currentImages.filter((_, index) => !priorityIndexes.has(index));
+    const chunkSize = 2;
+    let offset = 0;
+
+    const loadChunk = () => {
+        remaining.slice(offset, offset + chunkSize).forEach(src => preloadImage(src, 'auto'));
+        offset += chunkSize;
+        if (offset < remaining.length) setTimeout(loadChunk, 100);
+    };
+
+    if (remaining.length) {
+        requestAnimationFrame(loadChunk);
+    }
 }
 
 // 初始化各分类的状态
@@ -1085,8 +1441,52 @@ Object.keys(categoryStats).forEach(catId => {
     categoryPagination[catId] = [];
     categoryCurrentFilter[catId] = '';
     categoryCurrentPage[catId] = 1;
-    categoryPageSize[catId] = 20;
 });
+
+function getSafeFilterForCategory(categoryId, filter) {
+    const allowedFilters = categoryScopedFilters[categoryId];
+    if (!allowedFilters || allowedFilters.has(filter)) return filter;
+    return '';
+}
+
+function updateCategoryDropdownLabel() {
+    const select = document.getElementById('categoryDropdownBtn');
+    const stats = categoryStats[currentCategory];
+    if (!select || !stats) return;
+    select.value = currentCategory;
+}
+
+function selectCategoryFromDropdown(categoryId) {
+    if (!categoryId || categoryId === currentCategory) {
+        updateCategoryDropdownLabel();
+        return;
+    }
+    switchCategory(categoryId);
+}
+
+function syncQuickFilterButtons() {
+    document.querySelectorAll('.quick-filter').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === currentFilter);
+    });
+    updateCategoryDropdownLabel();
+}
+
+function syncScopedControls() {
+    document.querySelectorAll('[data-scope]').forEach(control => {
+        const scope = control.dataset.scope;
+        const scopes = scope.split(/[\s,]+/).filter(Boolean);
+        const visible = scopes.includes('all') || scopes.includes(currentCategory);
+        control.classList.toggle('control-hidden', !visible);
+    });
+
+    const safeFilter = getSafeFilterForCategory(currentCategory, currentFilter);
+    if (safeFilter !== currentFilter) {
+        currentFilter = safeFilter;
+        categoryCurrentFilter[currentCategory] = safeFilter;
+    }
+
+    syncQuickFilterButtons();
+}
 
 // 切换分类
 function switchCategory(categoryId) {
@@ -1094,28 +1494,24 @@ function switchCategory(categoryId) {
     if (currentCategory) {
         categoryCurrentFilter[currentCategory] = currentFilter;
         categoryCurrentPage[currentCategory] = currentPage;
-        categoryPageSize[currentCategory] = pageSize;
         categoryPagination[currentCategory] = getVisibleProducts();
     }
     
     // 切换到新分类
     currentCategory = categoryId;
-    currentFilter = categoryCurrentFilter[categoryId] || '';
+    currentFilter = getSafeFilterForCategory(categoryId, categoryCurrentFilter[categoryId] || '');
     currentPage = categoryCurrentPage[categoryId] || 1;
-    pageSize = categoryPageSize[categoryId] || 20;
     
     // 更新标签激活状态
     document.querySelectorAll('.category-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.category === categoryId);
     });
-    
     // 更新筛选按钮状态
-    document.querySelectorAll('.quick-filter').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.filter === currentFilter);
-    });
+    syncQuickFilterButtons();
+    syncScopedControls();
     
     // 更新分页大小选择器
-    document.querySelector('.pagination select').value = pageSize;
+    syncPaginationControls();
     
     // 更新统计信息
     updateCategoryStats();
@@ -1170,6 +1566,107 @@ function getVisibleProducts() {
     return filtered;
 }
 
+function syncSearchClearButton() {
+    const search = document.getElementById('search');
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (!search || !clearBtn) return;
+    clearBtn.classList.toggle('visible', search.value.length > 0);
+}
+
+function setupControlEventListeners() {
+    if (window.__catalogControlsBound) return;
+    window.__catalogControlsBound = true;
+
+    document.addEventListener('input', event => {
+        if (event.target?.id !== 'search') return;
+        debouncedFilter();
+    }, true);
+
+    document.addEventListener('change', event => {
+        const target = event.target;
+        if (!target) return;
+
+        if (target.id === 'categoryDropdownBtn') {
+            selectCategoryFromDropdown(target.value);
+            return;
+        }
+
+        if (target.id === 'pageSizeTop' || target.id === 'pageSizeBottom') {
+            changePageSize(target.value);
+        }
+    }, true);
+
+    document.addEventListener('click', event => {
+        const target = event.target;
+        if (!target?.closest) return;
+
+        const clearButton = target.closest('#searchClearBtn');
+        if (clearButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            clearSearch();
+            return;
+        }
+
+        const filterButton = target.closest('button.quick-filter[data-filter]');
+        if (filterButton) {
+            event.preventDefault();
+            setQuickFilter(filterButton);
+            return;
+        }
+
+        const viewButton = target.closest('.view-btn');
+        if (viewButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            setView(viewButton);
+            return;
+        }
+
+        const themeButton = target.closest('.theme-btn');
+        if (themeButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            toggleTheme();
+            return;
+        }
+
+        const updateButton = target.closest('.update-btn');
+        if (updateButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            const updateTypeById = {
+                updateMiniBtn: 'minigt',
+                updateArBtn: 'ar',
+                updateTopSpeedBtn: 'topspeed',
+                updateSparkBtn: 'spark',
+                updateSpark64Btn: 'spark64',
+                updateInnoBtn: 'inno'
+            };
+            const updateType = updateTypeById[updateButton.id];
+            if (updateType) triggerUpdate(updateType);
+        }
+    }, true);
+
+    const search = document.getElementById('search');
+    if (search && !search.dataset.boundInput) {
+        search.addEventListener('input', debouncedFilter);
+        search.dataset.boundInput = 'true';
+    }
+
+    const categorySelect = document.getElementById('categoryDropdownBtn');
+    if (categorySelect && !categorySelect.dataset.boundChange) {
+        categorySelect.addEventListener('change', event => selectCategoryFromDropdown(event.target.value));
+        categorySelect.dataset.boundChange = 'true';
+    }
+
+    document.querySelectorAll('#pageSizeTop, #pageSizeBottom').forEach(select => {
+        if (select.dataset.boundChange) return;
+        select.addEventListener('change', event => changePageSize(event.target.value));
+        select.dataset.boundChange = 'true';
+    });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Apply saved theme
@@ -1195,6 +1692,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sortTable(col, sortState.dir);
         });
     });
+    setupControlEventListeners();
     // Keyboard navigation for modal
     document.addEventListener('keydown', (e) => {
         if (!document.getElementById('modalOverlay').classList.contains('active')) return;
@@ -1208,6 +1706,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.classList.toggle('visible', window.scrollY > 500);
     });
     // Apply initial filter and pagination
+    syncScopedControls();
+    syncSearchClearButton();
     applyFilter();
 });
 
@@ -1232,9 +1732,9 @@ function setView(btn) {
 // Quick filter
 function setQuickFilter(btn) {
     currentFilter = btn.dataset.filter;
+    categoryCurrentFilter[currentCategory] = currentFilter;
     currentPage = 1;  // Reset to first page when filter changes
-    document.querySelectorAll('.quick-filter').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    syncQuickFilterButtons();
     applyFilter();
 }
 
@@ -1242,11 +1742,29 @@ function setQuickFilter(btn) {
 function debouncedFilter() {
     clearTimeout(filterTimeout);
     currentPage = 1;  // Reset to first page when search changes
+    const searchValue = document.getElementById('search')?.value.trim() || '';
+    if (searchValue && currentFilter && currentFilter !== 'fav') {
+        currentFilter = '';
+        categoryCurrentFilter[currentCategory] = '';
+        syncQuickFilterButtons();
+    }
+    syncSearchClearButton();
     filterTimeout = setTimeout(applyFilter, 200);
+}
+
+function clearSearch() {
+    const search = document.getElementById('search');
+    if (!search || !search.value) return;
+    search.value = '';
+    currentPage = 1;
+    syncSearchClearButton();
+    applyFilter();
+    search.focus();
 }
 
 // Filter function with pagination
 function applyFilter() {
+    syncSearchClearButton();
     const q = document.getElementById('search').value.toLowerCase();
     const allRows = currentView === 'table' 
         ? document.querySelectorAll('#tableView tbody tr')
@@ -1314,27 +1832,87 @@ function updatePagination(visibleRows) {
     for (let i = startIndex; i < endIndex; i++) {
         visibleRows[i].classList.remove('hidden');
     }
-    preloadPageCovers(visibleRows.slice(startIndex, endIndex));
+    const currentPageRows = visibleRows.slice(startIndex, endIndex);
+    activateVisibleImages(currentPageRows);
+    preloadPageCovers(currentPageRows);
     preloadUpcomingPageCovers(visibleRows, endIndex);
     
-    // Update pagination UI
-    document.getElementById('pageInfo').textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
-    document.getElementById('btnFirst').disabled = currentPage === 1;
-    document.getElementById('btnPrev').disabled = currentPage === 1;
-    document.getElementById('btnNext').disabled = currentPage === totalPages;
-    document.getElementById('btnLast').disabled = currentPage === totalPages;
+    syncPaginationControls(totalPages);
     
     // Store totalPages as global for easy access
     window.totalPages = totalPages;
 }
 
+function syncPaginationControls(totalPagesValue = window.totalPages || 1) {
+    totalPagesValue = Math.max(1, parseInt(totalPagesValue, 10) || 1);
+
+    document.querySelectorAll('.pagination .page-info').forEach(info => {
+        info.textContent = `第 ${currentPage} 页 / 共 ${totalPagesValue} 页`;
+    });
+
+    [
+        ['btnFirst', 'btnFirstTop', currentPage === 1],
+        ['btnPrev', 'btnPrevTop', currentPage === 1],
+        ['btnNext', 'btnNextTop', currentPage === totalPagesValue],
+        ['btnLast', 'btnLastTop', currentPage === totalPagesValue],
+    ].forEach(([bottomId, topId, disabled]) => {
+        [bottomId, topId].forEach(id => {
+            const button = document.getElementById(id);
+            if (button) button.disabled = disabled;
+        });
+    });
+
+    document.querySelectorAll('.pagination select').forEach(select => {
+        select.value = String(pageSize);
+    });
+
+    document.querySelectorAll('.pagination .page-jump-input').forEach(input => {
+        input.max = String(totalPagesValue);
+        input.value = String(currentPage);
+        input.disabled = totalPagesValue <= 1;
+        input.setAttribute('aria-label', `跳转页码，共 ${totalPagesValue} 页`);
+    });
+
+    document.querySelectorAll('.pagination .page-jump-btn').forEach(button => {
+        button.disabled = totalPagesValue <= 1;
+    });
+}
+
 // Go to specific page
 function goToPage(page) {
-    if (page < 1 || page > totalPages) return;
+    const maxPage = Math.max(1, parseInt(window.totalPages, 10) || 1);
+    page = parseInt(page, 10);
+    if (!Number.isFinite(page)) return;
+    if (page < 1 || page > maxPage) return;
     currentPage = page;
     applyFilter();
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function normalizeJumpPage(input) {
+    const maxPage = Math.max(1, parseInt(input?.max || window.totalPages, 10) || 1);
+    const fallbackPage = Math.max(1, Math.min(currentPage, maxPage));
+    const rawPage = parseInt(input?.value, 10);
+    const page = Number.isFinite(rawPage) ? Math.max(1, Math.min(rawPage, maxPage)) : fallbackPage;
+    if (input) input.value = String(page);
+    return page;
+}
+
+function jumpToPageInput(input) {
+    if (!input || input.disabled) return;
+    goToPage(normalizeJumpPage(input));
+}
+
+function handlePageJumpKey(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        jumpToPageInput(event.currentTarget);
+    }
+    if (event.key === 'Escape') {
+        event.currentTarget.value = String(currentPage);
+        event.currentTarget.blur();
+    }
 }
 
 // Go to first page
@@ -1361,6 +1939,7 @@ function goToLastPage() {
 function changePageSize(size) {
     pageSize = parseInt(size);
     currentPage = 1;
+    syncPaginationControls();
     applyFilter();
 }
 
@@ -1411,10 +1990,11 @@ function openMultiModalFromElement(element, imgIndex) {
     try {
         const images = JSON.parse(element.dataset.images.replace(/&quot;/g, '"'));
         const name = element.dataset.name || '产品图片';
+        const category = element.dataset.category || 'mini-gt';
         
         if (images && images.length > 0) {
             const safeImgIndex = Math.max(0, Math.min(imgIndex || 0, images.length - 1));
-            openMultiModal(images, name, safeImgIndex);
+            openMultiModal(images, name, safeImgIndex, category);
             return;
         }
     } catch (e) {
@@ -1426,7 +2006,7 @@ function openMultiModalFromElement(element, imgIndex) {
     const product = productsData.find(p => p.index === index);
     if (product) {
         const safeImgIndex = Math.max(0, Math.min(imgIndex || 0, product.images.length - 1));
-        openMultiModal(product.images, product.name, safeImgIndex);
+        openMultiModal(product.images, product.name, safeImgIndex, product.categoryId || 'mini-gt');
         return;
     }
     
@@ -1441,43 +2021,71 @@ function openMultiModalByIndex(index, imgIndex) {
         return;
     }
     const safeImgIndex = Math.max(0, Math.min(imgIndex || 0, product.images.length - 1));
-    openMultiModal(product.images, product.name, safeImgIndex);
+    openMultiModal(product.images, product.name, safeImgIndex, product.categoryId || 'mini-gt');
 }
 
 // Multi-image modal
-function openMultiModal(images, name, index) {
+function openMultiModal(images, name, index, category = 'mini-gt') {
     if (!images || images.length === 0) return;
     currentImages = images;
     currentImageIndex = index;
     currentModalName = name;
-    currentImages.forEach(preloadImage);
-    updateModalImage();
+    currentModalCategory = category;
+    modalLoadToken += 1;
+    preloadModalAllImages(currentImageIndex);
+    updateModalImage(true);
     document.getElementById('modalCaption').textContent = name;
     document.getElementById('modalOverlay').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
-function updateModalImage() {
+function updateModalImage(forceBlank = false) {
     if (!currentImages || currentImages.length === 0) return;
     const img = document.getElementById('modalImg');
     const content = img.closest('.modal-content');
     const nextSrc = currentImages[currentImageIndex];
+    const token = ++modalLoadToken;
+    const currentSrc = img.getAttribute('src') || '';
     
     if (content) content.classList.add('loading');
-    img.style.opacity = '0';
-    img.onload = () => {
+    document.getElementById('modalCounter').textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+    preloadModalNeighbors();
+
+    const showImage = () => {
+        if (token !== modalLoadToken) return;
+        img.onload = null;
+        img.onerror = null;
+        imageReady.add(nextSrc);
+        imageFailed.delete(nextSrc);
+        imageLoadCache.set(nextSrc, Promise.resolve(true));
         img.style.opacity = '1';
         document.getElementById('modalCaption').textContent = currentModalName;
         if (content) content.classList.remove('loading');
     };
-    img.onerror = () => {
+
+    const showError = () => {
+        if (token !== modalLoadToken) return;
         if (content) content.classList.remove('loading');
         document.getElementById('modalCaption').textContent = '图片加载失败';
     };
-    // 先清空旧图，避免切换时旧图片继续停留造成“下一张没变”的错觉
-    img.removeAttribute('src');
-    img.src = nextSrc;
-    document.getElementById('modalCounter').textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
-    preloadModalNeighbors();
+
+    if (forceBlank || !img.getAttribute('src')) {
+        img.style.opacity = '0';
+    }
+
+    img.onload = showImage;
+    img.onerror = showError;
+
+    if (currentSrc !== nextSrc) {
+        img.src = nextSrc;
+    } else if (img.complete && img.naturalWidth > 0) {
+        showImage();
+    }
+
+    preloadImage(nextSrc, 'high').then(loaded => {
+        if (loaded && token === modalLoadToken && img.getAttribute('src') === nextSrc) {
+            showImage();
+        }
+    });
 }
 function prevImage() {
     currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
@@ -1494,15 +2102,22 @@ function closeModal() {
 
 // Image error handling
 function handleImageError(img, idx) {
-    // 尝试用其他图片替换
+    const currentSrc = img.getAttribute('src') || img.dataset.src || '';
+    const failedSources = new Set((img.dataset.failedSrcs || '').split('|').filter(Boolean));
+    if (currentSrc) {
+        failedSources.add(currentSrc);
+        imageFailed.add(currentSrc);
+    }
+
     const parent = img.closest('tr') || img.closest('.card-item');
     if (parent && parent.dataset.images) {
         try {
             const images = JSON.parse(parent.dataset.images.replace(/&quot;/g, '"'));
-            // 尝试使用其他图片替换
             for (let i = 0; i < images.length; i++) {
-                if (i !== idx && images[i]) {
-                    img.src = images[i];
+                const candidate = images[i];
+                if (i !== idx && candidate && !failedSources.has(candidate) && candidate !== placeholderImage) {
+                    img.dataset.failedSrcs = Array.from(failedSources).join('|');
+                    img.src = candidate;
                     return;
                 }
             }
@@ -1510,8 +2125,12 @@ function handleImageError(img, idx) {
             console.warn('Failed to parse images:', e);
         }
     }
-    // 如果没有其他图片可用，显示占位符
-    img.style.display = 'none';
+
+    img.onerror = null;
+    img.src = placeholderImage;
+    img.dataset.src = placeholderImage;
+    img.classList.add('loaded');
+    img.style.display = '';
 }
 
 // Favorites
@@ -1576,43 +2195,124 @@ function showToast(msg) {
     toast._timeout = setTimeout(() => toast.classList.remove('show'), 1800);
 }
 
-// Update function (for button)
+// Update function (for buttons)
 let statusCheckInterval = null;
-function triggerUpdate() {
-    const btn = document.getElementById('updateBtn');
+const updateButtons = {
+    minigt: {
+        buttonId: 'updateMiniBtn',
+        endpoint: '/api/update-minigt',
+        label: '🔄 更新 MINI GT 产品',
+        runningText: '⏳ MINI GT 更新中...',
+        startText: '🚀 MINI GT 更新已开始，请耐心等待...'
+    },
+    ar: {
+        buttonId: 'updateArBtn',
+        endpoint: '/api/update-ar',
+        label: '🔄 更新 AR 产品',
+        runningText: '⏳ AR 更新中...',
+        startText: '🚀 AR 更新已开始，请耐心等待...'
+    },
+    topspeed: {
+        buttonId: 'updateTopSpeedBtn',
+        endpoint: '/api/update-topspeed',
+        label: '🔄 更新 TOP SPEED 产品',
+        runningText: '⏳ TOP SPEED 更新中...',
+        startText: '🚀 TOP SPEED 更新已开始，请耐心等待...'
+    },
+    spark: {
+        buttonId: 'updateSparkBtn',
+        endpoint: '/api/update-spark',
+        label: '🔄 更新 SPARK 产品',
+        runningText: '⏳ SPARK 更新中...',
+        startText: '🚀 SPARK 更新已开始，请耐心等待...'
+    },
+    spark64: {
+        buttonId: 'updateSpark64Btn',
+        endpoint: '/api/update-spark64',
+        label: '🔄 更新 SPARK 1:64 产品',
+        runningText: '⏳ SPARK 1:64 更新中...',
+        startText: '🚀 SPARK 1:64 更新已开始，请耐心等待...'
+    },
+    inno: {
+        buttonId: 'updateInnoBtn',
+        endpoint: '/api/update-inno',
+        label: '🔄 更新 INNO 产品',
+        runningText: '⏳ INNO 更新中...',
+        startText: '🚀 INNO 更新已开始，请耐心等待...'
+    }
+};
+
+function closeStatusPanel() {
     const panel = document.getElementById('statusPanel');
+    panel.className = 'status-panel';
+    panel.innerHTML = '';
+}
+
+function showStatusPanel(message, state = '') {
+    const panel = document.getElementById('statusPanel');
+    panel.className = `status-panel visible${state ? ' ' + state : ''}`;
+    panel.innerHTML = '';
+
+    const messageEl = document.createElement('span');
+    messageEl.className = 'status-message';
+    messageEl.textContent = message;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'status-close';
+    closeBtn.type = 'button';
+    closeBtn.title = '关闭提示';
+    closeBtn.setAttribute('aria-label', '关闭提示');
+    closeBtn.textContent = '×';
+    closeBtn.onclick = closeStatusPanel;
+
+    panel.appendChild(messageEl);
+    panel.appendChild(closeBtn);
+}
+
+function setUpdateButtonsDisabled(disabled) {
+    Object.values(updateButtons).forEach(config => {
+        const btn = document.getElementById(config.buttonId);
+        if (!btn) return;
+        btn.disabled = disabled;
+        if (!disabled) btn.textContent = config.label;
+    });
+}
+
+function triggerUpdate(type) {
+    const config = updateButtons[type] || updateButtons.ar;
+    const btn = document.getElementById(config.buttonId);
     
     if (btn.disabled) return;
     
-    btn.disabled = true;
-    btn.textContent = '⏳ 更新中...';
+    setUpdateButtonsDisabled(true);
+    btn.textContent = config.runningText;
     
-    panel.textContent = '正在连接服务器...';
-    panel.className = 'status-panel visible';
+    showStatusPanel('正在连接服务器...');
     
     // Try to call the update API
-    fetch('/api/update-ar')
-        .then(response => response.json())
+    fetch(config.endpoint)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.status === 'started') {
-                panel.textContent = '🚀 更新已开始，请耐心等待...';
+                showStatusPanel(config.startText);
                 startStatusCheck();
             } else if (data.status === 'running') {
-                panel.textContent = '⏳ 已有更新在进行中...';
+                showStatusPanel('⏳ 已有更新在进行中...');
                 startStatusCheck();
             } else {
-                panel.textContent = '更新已触发，请稍后刷新页面';
-                panel.className = 'status-panel visible success';
-                btn.disabled = false;
-                btn.textContent = '🔄 更新 AR 产品';
+                showStatusPanel('更新已触发，请稍后刷新页面', 'success');
+                setUpdateButtonsDisabled(false);
             }
         })
         .catch(err => {
             console.error('Update error:', err);
-            panel.textContent = '⚠️ 请确保已通过本地服务器访问页面 (http://localhost:5001)';
-            panel.className = 'status-panel visible error';
-            btn.disabled = false;
-            btn.textContent = '🔄 更新 AR 产品';
+            showStatusPanel('⚠️ 请确保已通过本地服务器访问页面 (http://localhost:5001)', 'error');
+            setUpdateButtonsDisabled(false);
         });
 }
 
@@ -1623,32 +2323,31 @@ function startStatusCheck() {
         fetch('/api/status')
             .then(response => response.json())
             .then(data => {
-                const panel = document.getElementById('statusPanel');
-                const btn = document.getElementById('updateBtn');
-                
                 if (data.running) {
-                    panel.textContent = data.log || '⏳ 正在更新中...';
-                    panel.className = 'status-panel visible';
+                    showStatusPanel(data.log || '⏳ 正在更新中...');
                 } else {
                     clearInterval(statusCheckInterval);
                     statusCheckInterval = null;
                     
                     if (data.log && data.log.includes('✅')) {
-                        panel.textContent = '🎉 更新完成！请刷新页面查看最新数据';
-                        panel.className = 'status-panel visible success';
+                        showStatusPanel(data.log, 'success');
                     } else if (data.log && data.log.includes('❌')) {
-                        panel.textContent = data.log;
-                        panel.className = 'status-panel visible error';
+                        showStatusPanel(data.log, 'error');
                     } else {
-                        panel.textContent = '✓ 准备就绪';
-                        panel.className = 'status-panel visible success';
+                        showStatusPanel('✓ 准备就绪', 'success');
                     }
                     
-                    btn.disabled = false;
-                    btn.textContent = '🔄 更新 AR 产品';
+                    setUpdateButtonsDisabled(false);
                 }
             })
-            .catch(err => console.error('Status check error:', err));
+            .catch(err => {
+                console.error('Status check error:', err);
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+
+                showStatusPanel('⚠️ 无法读取更新状态，请检查本地服务器后重试', 'error');
+                setUpdateButtonsDisabled(false);
+            });
     }, 2000);
 }
 
@@ -1657,7 +2356,7 @@ if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(e => {
             if (e.isIntersecting) {
-                e.target.classList.add('loaded');
+                activateImage(e.target);
                 const card = e.target.closest('.card-item');
                 if (card) preloadProductImages(card, 3);
                 observer.unobserve(e.target);
@@ -1669,6 +2368,33 @@ if ('IntersectionObserver' in window) {
         observer.observe(img);
     });
 }
+
+Object.assign(window, {
+    selectCategoryFromDropdown,
+    setQuickFilter,
+    setView,
+    toggleTheme,
+    debouncedFilter,
+    clearSearch,
+    goToFirstPage,
+    goToPrevPage,
+    goToNextPage,
+    goToLastPage,
+    jumpToPageInput,
+    handlePageJumpKey,
+    changePageSize,
+    openMultiModalFromElement,
+    openMultiModal,
+    closeModal,
+    prevImage,
+    nextImage,
+    handleImageError,
+    copySKU,
+    copyText,
+    toggleFavorite,
+    triggerUpdate,
+    closeStatusPanel
+});
 
 </script>
 </body>
@@ -1688,7 +2414,7 @@ for i, p in enumerate(products):
         'name': p['name'],
         'sku': p['sku'],
         'categoryId': cat_id,
-        'images': p.get('images', [p.get('image', '')])
+        'images': [modal_image_url(img, cat_id) for img in get_images(p)]
     })
 products_json_str = json.dumps(products_list, ensure_ascii=False)
 
@@ -1698,12 +2424,14 @@ html = html.replace('{count_released}', str(count_released))
 html = html.replace('{count_preorder}', str(count_preorder))
 html = html.replace('{count_soldout}', str(count_soldout))
 html = html.replace('{category_tabs_html}', category_tabs_html)
+html = html.replace('{category_options_html}', category_options_html)
 html = html.replace('{table_rows}', table_rows)
 html = html.replace('{card_items}', card_items)
 
 # 最后替换 JSON 占位符
 html = html.replace('PRODUCTS_JSON_PLACEHOLDER', products_json_str)
 html = html.replace('CATEGORY_STATS_PLACEHOLDER', category_stats_json)
+html = html.replace('PLACEHOLDER_IMAGE_PLACEHOLDER', json.dumps(PLACEHOLDER_IMAGE))
 
 # ── 写入文件 ──
 with HTML_PATH.open('w', encoding='utf-8') as f:
