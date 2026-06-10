@@ -30,7 +30,13 @@
 
             <div class="control-row control-actions">
                 <div class="action-group filter-actions">
-                    <select id="categorySelect" class="quick-filter category-select" aria-label="选择分类"></select>
+                    <div id="categoryPicker" class="category-picker">
+                        <select id="categorySelect" class="category-select-native" aria-label="选择分类" tabindex="-1"></select>
+                        <button id="categoryPickerButton" class="quick-filter category-select category-picker-button" type="button" aria-haspopup="listbox" aria-expanded="false">
+                            全部
+                        </button>
+                        <div id="categoryMenu" class="category-menu" role="listbox" aria-label="选择分类"></div>
+                    </div>
                     <button class="quick-filter status-filter" data-filter="Pre-Order">📦 Pre-Order</button>
                     <button class="quick-filter status-filter" data-filter="Released">✅ Released</button>
                     <button class="quick-filter status-filter" data-filter="Sold Out">❌ Sold Out</button>

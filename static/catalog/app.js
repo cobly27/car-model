@@ -21,6 +21,8 @@ const state = {
     pageByCategory: {},
     searchTimer: null,
     statusTimer: null,
+    statusAutoCloseTimer: null,
+    activeUpdateType: "",
     favorites: loadFavorites(),
     imageCache: new Map(),
     pagePreloadTimer: null,
@@ -28,6 +30,7 @@ const state = {
     modalIndex: 0,
     modalName: "",
     modalToken: 0,
+    lastFavoriteSku: "",
 };
 
 const categoryScopedFilters = {
@@ -85,7 +88,6 @@ function saveUiState() {
         currentPage: state.currentPage,
         pageSize: state.pageSize,
         currentView: state.currentView,
-        searchQuery: $("#search")?.value || state.searchQuery || "",
     }));
 }
 
@@ -250,7 +252,7 @@ function applyCatalogPayload(data, updateConfig, preserveState = false, savedSta
     if (!preserveState) {
         state.pageSize = [20, 50, 100].includes(Number(savedState.pageSize)) ? Number(savedState.pageSize) : 20;
         state.currentView = savedState.currentView === "table" ? "table" : "cards";
-        state.searchQuery = String(savedState.searchQuery || "");
+        state.searchQuery = "";
     }
 
     const categoryExists = data.categories.some(category => category.id === previousCategory);
@@ -312,9 +314,80 @@ function renderCategoryOptions() {
         return `<option value="${escapeHtml(category.id)}">全部 · ${escapeHtml(category.name)} (${count})</option>`;
     }).join("");
     select.value = state.currentCategory;
+    renderCategoryMenu();
+    syncCategoryPicker();
 
     const total = state.data.meta?.total_products ?? state.data.meta?.computed_total_products ?? 0;
     $("#metaLine").textContent = `数据来源: minigt.tsm-models.com · 新版架构验证 · 共 ${total} 款`;
+}
+
+function categoryDisplay(categoryId) {
+    const category = state.data?.categories?.find(item => item.id === categoryId) || state.data?.categories?.[0];
+    if (!category) return { name: "全部", count: 0 };
+    return {
+        name: category.name,
+        count: category.products?.length || 0,
+    };
+}
+
+function renderCategoryMenu() {
+    const menu = $("#categoryMenu");
+    if (!menu || !state.data) return;
+    menu.innerHTML = state.data.categories.map(category => {
+        const count = category.products?.length || 0;
+        const selected = category.id === state.currentCategory;
+        return `
+            <button class="category-option${selected ? " selected" : ""}" type="button" role="option" aria-selected="${selected}" data-category="${escapeHtml(category.id)}">
+                <span class="category-option-check">${selected ? "✓" : ""}</span>
+                <span class="category-option-main">
+                    <span class="category-option-name">全部 · ${escapeHtml(category.name)}</span>
+                    <span class="category-option-count">${count} 款</span>
+                </span>
+            </button>
+        `;
+    }).join("");
+}
+
+function syncCategoryPicker() {
+    const select = $("#categorySelect");
+    const button = $("#categoryPickerButton");
+    const picker = $("#categoryPicker");
+    if (!button || !picker) return;
+    const category = categoryDisplay(state.currentCategory);
+    if (select) select.value = state.currentCategory;
+    button.innerHTML = `
+        <span class="category-picker-label">全部 · ${escapeHtml(category.name)} (${category.count})</span>
+        <span class="category-picker-arrow" aria-hidden="true">⌄</span>
+    `;
+    button.setAttribute("aria-expanded", picker.classList.contains("open") ? "true" : "false");
+    $("#categoryMenu")?.querySelectorAll(".category-option").forEach(option => {
+        const selected = option.dataset.category === state.currentCategory;
+        option.classList.toggle("selected", selected);
+        option.setAttribute("aria-selected", selected ? "true" : "false");
+        const check = option.querySelector(".category-option-check");
+        if (check) check.textContent = selected ? "✓" : "";
+    });
+}
+
+function closeCategoryPicker() {
+    const picker = $("#categoryPicker");
+    if (!picker) return;
+    picker.classList.remove("open");
+    $("#categoryPickerButton")?.setAttribute("aria-expanded", "false");
+}
+
+function closePageSizePickers() {
+    document.querySelectorAll(".page-size-picker.open").forEach(picker => {
+        picker.classList.remove("open");
+        picker.querySelector("[data-page-size-toggle]")?.setAttribute("aria-expanded", "false");
+    });
+}
+
+function toggleCategoryPicker() {
+    const picker = $("#categoryPicker");
+    if (!picker) return;
+    picker.classList.toggle("open");
+    syncCategoryPicker();
 }
 
 function updateButtonConfig(type) {
@@ -331,6 +404,26 @@ function bindEvents() {
     $("#search").addEventListener("input", onSearchInput);
     $("#searchClearBtn").addEventListener("click", clearSearch);
     $("#categorySelect").addEventListener("change", event => switchCategory(event.target.value));
+    $("#categoryPickerButton").addEventListener("click", event => {
+        event.stopPropagation();
+        toggleCategoryPicker();
+    });
+    $("#categoryMenu").addEventListener("click", event => {
+        const option = event.target.closest("[data-category]");
+        if (!option) return;
+        closeCategoryPicker();
+        switchCategory(option.dataset.category);
+    });
+    document.addEventListener("click", event => {
+        if (!event.target.closest("#categoryPicker")) closeCategoryPicker();
+        if (!event.target.closest(".page-size-picker")) closePageSizePickers();
+    });
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            closeCategoryPicker();
+            closePageSizePickers();
+        }
+    });
 
     document.querySelectorAll(".status-filter, .fav-filter").forEach(button => {
         button.addEventListener("click", () => setFilter(button.dataset.filter || ""));
@@ -402,7 +495,7 @@ function switchCategory(categoryId) {
     const allowed = categoryScopedFilters[categoryId] || new Set(["", "fav"]);
     state.currentFilter = allowed.has(state.filterByCategory[categoryId]) ? state.filterByCategory[categoryId] : "";
     state.currentPage = state.pageByCategory[categoryId] || 1;
-    $("#categorySelect").value = categoryId;
+    syncCategoryPicker();
     syncScopedControls();
     applyFilter();
     saveUiState();
@@ -515,6 +608,12 @@ function currentPageProducts() {
 
 function renderPagination() {
     const totalPages = totalPagesForCurrentFilter();
+    const pageSizeOptions = [20, 50, 100].map(size => `
+        <button class="page-size-option${state.pageSize === size ? " selected" : ""}" type="button" data-page-size="${size}" aria-selected="${state.pageSize === size}">
+            <span>${size}/页</span>
+            <span class="page-size-check">${state.pageSize === size ? "✓" : ""}</span>
+        </button>
+    `).join("");
     const html = `
         <button data-page="first" ${state.currentPage === 1 ? "disabled" : ""}>首页</button>
         <button data-page="prev" ${state.currentPage === 1 ? "disabled" : ""}>上一页</button>
@@ -523,11 +622,25 @@ function renderPagination() {
         <button data-page="jump" ${totalPages <= 1 ? "disabled" : ""}>跳转</button>
         <button data-page="next" ${state.currentPage === totalPages ? "disabled" : ""}>下一页</button>
         <button data-page="last" ${state.currentPage === totalPages ? "disabled" : ""}>末页</button>
-        <select class="page-size" aria-label="每页数量">
+        <div class="page-size-picker">
+            <select class="page-size page-size-native" aria-label="每页数量" tabindex="-1">
+                <option value="20" ${state.pageSize === 20 ? "selected" : ""}>20/页</option>
+                <option value="50" ${state.pageSize === 50 ? "selected" : ""}>50/页</option>
+                <option value="100" ${state.pageSize === 100 ? "selected" : ""}>100/页</option>
+            </select>
+            <button class="page-size-button" type="button" data-page-size-toggle aria-haspopup="listbox" aria-expanded="false">
+                <span>${state.pageSize}/页</span>
+                <span class="page-size-arrow" aria-hidden="true">⌄</span>
+            </button>
+            <div class="page-size-menu" role="listbox" aria-label="每页数量">
+                ${pageSizeOptions}
+            </div>
+        </div>
+        <noscript><select class="page-size" aria-label="每页数量">
             <option value="20" ${state.pageSize === 20 ? "selected" : ""}>20/页</option>
             <option value="50" ${state.pageSize === 50 ? "selected" : ""}>50/页</option>
             <option value="100" ${state.pageSize === 100 ? "selected" : ""}>100/页</option>
-        </select>
+        </select></noscript>
     `;
     document.querySelectorAll(".pagination").forEach(nav => {
         nav.innerHTML = html;
@@ -538,6 +651,28 @@ function renderPagination() {
 }
 
 function handlePaginationClick(event) {
+    const pageSizeToggle = event.target.closest("[data-page-size-toggle]");
+    if (pageSizeToggle) {
+        const picker = pageSizeToggle.closest(".page-size-picker");
+        const open = !picker.classList.contains("open");
+        document.querySelectorAll(".page-size-picker.open").forEach(item => {
+            if (item !== picker) {
+                item.classList.remove("open");
+                item.querySelector("[data-page-size-toggle]")?.setAttribute("aria-expanded", "false");
+            }
+        });
+        picker.classList.toggle("open", open);
+        pageSizeToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        return;
+    }
+
+    const pageSizeOption = event.target.closest("[data-page-size]");
+    if (pageSizeOption) {
+        const nextPageSize = parseInt(pageSizeOption.dataset.pageSize, 10) || 20;
+        setPageSize(nextPageSize);
+        return;
+    }
+
     const action = event.target.closest("button")?.dataset.page;
     if (!action) return;
     const totalPages = totalPagesForCurrentFilter();
@@ -557,14 +692,20 @@ function handlePaginationClick(event) {
         saveUiState();
 }
 
+function setPageSize(pageSize) {
+    if (![20, 50, 100].includes(pageSize)) return;
+    state.pageSize = pageSize;
+    state.currentPage = 1;
+    state.pageByCategory[state.currentCategory] = 1;
+    document.querySelectorAll(".page-size-picker.open").forEach(item => item.classList.remove("open"));
+    renderPagination();
+    renderCurrentPage();
+    saveUiState();
+}
+
 function handlePaginationChange(event) {
     if (event.target.classList.contains("page-size")) {
-        state.pageSize = parseInt(event.target.value, 10) || 20;
-        state.currentPage = 1;
-        state.pageByCategory[state.currentCategory] = 1;
-        renderPagination();
-        renderCurrentPage();
-        saveUiState();
+        setPageSize(parseInt(event.target.value, 10) || 20);
     }
     if (event.target.classList.contains("page-jump-input")) {
         event.target.value = clampPage(event.target.value);
@@ -604,12 +745,13 @@ function renderCurrentPage() {
     scheduleCurrentPageImagePreload(products);
 }
 
-function renderCard(product) {
+function renderCard(product, pageIndex = 0) {
     const images = rawImages(product, "card");
     const firstImage = imageForDisplay(images[0], product.categoryId, "card");
     const favActive = state.favorites.has(product.sku);
+    const favoriteFeedback = product.sku === state.lastFavoriteSku ? " fav-pop" : "";
     return `
-        <article class="card-item" data-sku="${escapeHtml(product.sku)}" data-index="${product.index}">
+        <article class="card-item" data-sku="${escapeHtml(product.sku)}" data-index="${product.index}" style="--item-index: ${pageIndex % 24}">
             <div class="card-img" data-open-image="${product.index}">
                 <img src="${escapeHtml(firstImage)}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMAGE}'">
                 <span class="card-img-count">${images.length} 图</span>
@@ -619,7 +761,7 @@ function renderCard(product) {
                 <a class="card-name" href="${escapeHtml(productUrl(product))}" target="_blank" rel="noopener">${escapeHtml(product.name)}</a>
                 <div class="card-footer">
                     <span class="status ${statusClass(product.status)}">${escapeHtml(product.status || "Released")}</span>
-                    <button class="fav-btn ${favActive ? "active" : ""}" data-fav="${escapeHtml(product.sku)}" title="收藏">${favActive ? "⭐" : "☆"}</button>
+                    <button class="fav-btn ${favActive ? "active" : ""}${favoriteFeedback}" data-fav="${escapeHtml(product.sku)}" title="收藏">${favActive ? "⭐" : "☆"}</button>
                 </div>
             </div>
         </article>
@@ -630,6 +772,7 @@ function renderTableRow(product) {
     const images = rawImages(product, "card");
     const firstImage = imageForDisplay(images[0], product.categoryId, "card");
     const favActive = state.favorites.has(product.sku);
+    const favoriteFeedback = product.sku === state.lastFavoriteSku ? " fav-pop" : "";
     return `
         <tr data-sku="${escapeHtml(product.sku)}" data-index="${product.index}">
             <td>${product.index}</td>
@@ -637,7 +780,7 @@ function renderTableRow(product) {
             <td><a class="card-name" href="${escapeHtml(productUrl(product))}" target="_blank" rel="noopener">${escapeHtml(product.name)}</a></td>
             <td><span class="status ${statusClass(product.status)}">${escapeHtml(product.status || "Released")}</span></td>
             <td><div class="table-images"><img class="thumb-img" src="${escapeHtml(firstImage)}" alt="${escapeHtml(product.name)}" data-open-image="${product.index}" onerror="this.src='${PLACEHOLDER_IMAGE}'"><span>${images.length} 图</span></div></td>
-            <td><button class="fav-btn ${favActive ? "active" : ""}" data-fav="${escapeHtml(product.sku)}" title="收藏">${favActive ? "⭐" : "☆"}</button></td>
+            <td><button class="fav-btn ${favActive ? "active" : ""}${favoriteFeedback}" data-fav="${escapeHtml(product.sku)}" title="收藏">${favActive ? "⭐" : "☆"}</button></td>
         </tr>
     `;
 }
@@ -672,6 +815,7 @@ function handleProductClick(event) {
 
 function toggleFavorite(sku) {
     if (!sku) return;
+    state.lastFavoriteSku = sku;
     if (state.favorites.has(sku)) {
         state.favorites.delete(sku);
         showToast("已取消收藏");
@@ -681,6 +825,9 @@ function toggleFavorite(sku) {
     }
     saveFavorites();
     applyFilter();
+    setTimeout(() => {
+        if (state.lastFavoriteSku === sku) state.lastFavoriteSku = "";
+    }, 360);
 }
 
 function copyToClipboard(text) {
@@ -1006,6 +1153,7 @@ function formatUpdateHistoryHtml(history) {
             <div class="health-summary">
                 <div class="health-title">🕘 更新历史</div>
                 <div>暂无更新记录。</div>
+                <div class="health-subtitle">此提示将在 8 秒后自动关闭。</div>
             </div>
         `;
     }
@@ -1023,23 +1171,24 @@ function formatUpdateHistoryHtml(history) {
         <div class="health-summary">
             <div class="health-title">🕘 最近更新历史</div>
             ${rows}
+            <div class="health-subtitle">此提示将在 8 秒后自动关闭。</div>
         </div>
     `;
 }
 
 function showUpdateHistory() {
-    showStatusPanel("正在读取更新历史...");
+    showStatusPanel("正在读取更新历史...", "", 4000);
     fetch("/api/update-history?limit=10")
         .then(response => {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return response.json();
         })
         .then(data => {
-            showStatusHtmlPanel(formatUpdateHistoryHtml(data.history || []), "success");
+            showStatusHtmlPanel(formatUpdateHistoryHtml(data.history || []), "success", 8000);
         })
         .catch(error => {
             console.error(error);
-            showStatusPanel("⚠️ 无法读取更新历史", "error");
+            showStatusPanel("⚠️ 无法读取更新历史", "error", 4000);
         });
 }
 
@@ -1098,26 +1247,85 @@ function handleStatusPanelClick(event) {
 }
 
 function closeStatusPanel() {
+    clearTimeout(state.statusAutoCloseTimer);
+    state.statusAutoCloseTimer = null;
     const panel = $("#statusPanel");
     panel.className = "status-panel";
     panel.innerHTML = "";
     panel.setAttribute("aria-hidden", "true");
 }
 
-function showStatusPanel(message, stateName = "") {
+function scheduleStatusPanelAutoClose(autoCloseMs = 0) {
+    clearTimeout(state.statusAutoCloseTimer);
+    state.statusAutoCloseTimer = null;
+    if (!autoCloseMs) return;
+    state.statusAutoCloseTimer = setTimeout(closeStatusPanel, autoCloseMs);
+}
+
+function showStatusPanel(message, stateName = "", autoCloseMs = 0) {
     const panel = $("#statusPanel");
     panel.className = `status-panel visible${stateName ? ` ${stateName}` : ""}`;
     panel.innerHTML = `<div class="status-panel-content">${escapeHtml(message)}</div><button class="status-close" type="button" aria-label="关闭">×</button>`;
     panel.setAttribute("aria-hidden", "false");
     panel.querySelector(".status-close").onclick = closeStatusPanel;
+    scheduleStatusPanelAutoClose(autoCloseMs);
 }
 
-function showStatusHtmlPanel(html, stateName = "") {
+function showStatusHtmlPanel(html, stateName = "", autoCloseMs = 0) {
     const panel = $("#statusPanel");
     panel.className = `status-panel visible${stateName ? ` ${stateName}` : ""}`;
     panel.innerHTML = `<div class="status-panel-content">${html}</div><button class="status-close" type="button" aria-label="关闭">×</button>`;
     panel.setAttribute("aria-hidden", "false");
     panel.querySelector(".status-close").onclick = closeStatusPanel;
+    scheduleStatusPanelAutoClose(autoCloseMs);
+}
+
+function updateProgressFromMessage(message = "") {
+    const match = String(message).match(/(\d+)\s*\/\s*(\d+)/);
+    if (!match) {
+        return {
+            current: 0,
+            total: 0,
+            percent: 36,
+            indeterminate: true,
+        };
+    }
+    const current = Number(match[1]);
+    const total = Math.max(1, Number(match[2]));
+    return {
+        current,
+        total,
+        percent: Math.max(8, Math.min(100, Math.round((current / total) * 100))),
+        indeterminate: false,
+    };
+}
+
+function updateProgressTitle() {
+    const config = updateButtonConfig(state.activeUpdateType);
+    if (!config) return "产品更新中";
+    return config.runningText || `${config.label.replace(/^更新\s*/, "")}更新中...`;
+}
+
+function showUpdateProgressPanel(message = "正在更新中...") {
+    const progress = updateProgressFromMessage(message);
+    const progressText = progress.total ? `${progress.current} / ${progress.total}` : "正在准备";
+    const progressClass = progress.indeterminate ? " indeterminate" : "";
+    showStatusHtmlPanel(`
+        <div class="update-progress-card">
+            <div class="update-progress-head">
+                <span class="update-progress-icon" aria-hidden="true">⏳</span>
+                <div>
+                    <div class="update-progress-title">${escapeHtml(updateProgressTitle())}</div>
+                    <div class="update-progress-step">${escapeHtml(message)}</div>
+                </div>
+                <strong>${escapeHtml(progressText)}</strong>
+            </div>
+            <div class="update-progress-track${progressClass}" aria-label="更新进度">
+                <span style="width: ${progress.percent}%"></span>
+            </div>
+            <div class="update-progress-note">更新期间可以继续浏览当前数据，完成后页面会自动刷新。</div>
+        </div>
+    `, "updating");
 }
 
 function setUpdateButtonsDisabled(disabled, activeType = "") {
@@ -1133,8 +1341,9 @@ function setUpdateButtonsDisabled(disabled, activeType = "") {
 function triggerUpdate(type) {
     const config = updateButtonConfig(type);
     if (!config) return;
+    state.activeUpdateType = type;
     setUpdateButtonsDisabled(true, type);
-    showStatusPanel("正在连接服务器...");
+    showUpdateProgressPanel("正在连接服务器...");
 
     fetch(config.endpoint)
         .then(response => {
@@ -1142,13 +1351,14 @@ function triggerUpdate(type) {
             return response.json();
         })
         .then(data => {
-            showStatusPanel(data.status === "running" ? "⏳ 已有更新在进行中..." : config.startText);
+            showUpdateProgressPanel(data.status === "running" ? "已有更新在进行中..." : config.startText);
             startStatusCheck();
         })
         .catch(error => {
             console.error(error);
             showStatusPanel("⚠️ 无法触发更新，请确认本地服务器正在运行", "error");
             setUpdateButtonsDisabled(false);
+            state.activeUpdateType = "";
         });
 }
 
@@ -1159,7 +1369,7 @@ function startStatusCheck() {
             .then(response => response.json())
             .then(data => {
                 if (data.running) {
-                    showStatusPanel(data.log || "⏳ 正在更新中...");
+                    showUpdateProgressPanel(data.log || "正在更新中...");
                     return;
                 }
                 clearInterval(state.statusTimer);
@@ -1169,17 +1379,20 @@ function startStatusCheck() {
                         .then(() => {
                             showStatusPanel(`${data.log}\n\n✓ 页面数据已自动刷新`, "success");
                             setUpdateButtonsDisabled(false);
+                            state.activeUpdateType = "";
                         })
                         .catch(error => {
                             console.error(error);
                             showStatusPanel(`${data.log}\n\n⚠️ 更新完成，但自动刷新页面数据失败，请手动刷新。`, "warning");
                             setUpdateButtonsDisabled(false);
+                            state.activeUpdateType = "";
                         });
                     return;
                 }
                 if (data.log?.includes("❌")) showStatusPanel(data.log, "error");
                 else showStatusPanel("✓ 准备就绪", "success");
                 setUpdateButtonsDisabled(false);
+                state.activeUpdateType = "";
             })
             .catch(error => {
                 console.error(error);
@@ -1187,6 +1400,7 @@ function startStatusCheck() {
                 state.statusTimer = null;
                 showStatusPanel("⚠️ 无法读取更新状态，请检查本地服务器", "error");
                 setUpdateButtonsDisabled(false);
+                state.activeUpdateType = "";
             });
     }, 2000);
 }
