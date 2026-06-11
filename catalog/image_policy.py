@@ -32,6 +32,8 @@ IMAGE_POLICIES = {
         },
     },
     "poprace": {"maxImages": 4},
+    "gcd": {"maxImages": 4},
+    "dct": {"maxImages": 4},
 }
 
 

@@ -41,6 +41,7 @@
                     <button class="quick-filter status-filter" data-filter="Released">✅ Released</button>
                     <button class="quick-filter status-filter" data-filter="Sold Out">❌ Sold Out</button>
                     <button id="favoriteFilterBtn" class="quick-filter fav-filter" data-filter="fav">⭐ 收藏</button>
+                    <button id="favoriteSlideshowBtn" class="quick-filter slideshow-filter" type="button" title="播放收藏产品图片">🎞 收藏轮播</button>
                     <button class="view-btn" data-view="table" title="表格视图">📊</button>
                     <button class="view-btn active" data-view="cards" title="卡片视图">📦</button>
                     <button id="themeBtn" class="theme-btn" title="切换主题">🌙</button>
@@ -84,6 +85,28 @@
             <div id="modalCounter" class="modal-counter"></div>
         </div>
         <button id="modalNext" class="modal-nav modal-next" type="button" aria-label="下一张">›</button>
+    </div>
+
+    <div id="favoriteSlideshowOverlay" class="slideshow-overlay" role="dialog" aria-modal="true" aria-label="收藏产品轮播">
+        <button id="slideshowClose" class="slideshow-close" type="button" aria-label="关闭">×</button>
+        <button id="slideshowPrev" class="slideshow-nav slideshow-prev" type="button" aria-label="上一张">‹</button>
+        <div class="slideshow-content">
+            <div class="slideshow-media">
+                <img id="slideshowImg" alt="">
+            </div>
+            <div class="slideshow-info">
+                <div>
+                    <div id="slideshowSku" class="slideshow-sku"></div>
+                    <div id="slideshowName" class="slideshow-name"></div>
+                    <div id="slideshowStatus" class="slideshow-status"></div>
+                </div>
+                <div class="slideshow-controls">
+                    <button id="slideshowToggle" class="slideshow-toggle" type="button">⏸ 暂停</button>
+                    <span id="slideshowCounter" class="slideshow-counter"></span>
+                </div>
+            </div>
+        </div>
+        <button id="slideshowNext" class="slideshow-nav slideshow-next" type="button" aria-label="下一张">›</button>
     </div>
 
     <div id="toast" class="toast"></div>

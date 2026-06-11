@@ -108,6 +108,16 @@ def product_url(detail_id, category_id='mini-gt'):
         return 'https://www.inno-models.com/our-products/?jsf=jet-engine:shop-loop&tax=pa_scale:1-64'
     if category_id == 'poprace':
         return 'https://www.xcartoys.com/S_series'
+    if category_id == 'gcd':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'gcd'), None)
+        if product and product.get('gcd_url'):
+            return product.get('gcd_url')
+        return 'https://www.gcd-models.com/category/products/gcd/'
+    if category_id == 'dct':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'dct'), None)
+        if product and product.get('dct_url'):
+            return product.get('dct_url')
+        return 'https://www.gcd-models.com/category/products/dct/'
     return f'https://minigt.tsm-models.com/index.php?action=product-detail&id={detail_id}'
 
 def preview_image_url(image, category_id='mini-gt'):
@@ -1109,9 +1119,9 @@ body.dark .img-lazy {
         <select class="quick-filter active category-select" id="categoryDropdownBtn" data-filter="" onchange="selectCategoryFromDropdown(this.value)" aria-label="选择分类">
             {category_options_html}
         </select>
-        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
-        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
-        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
         <button class="quick-filter fav-only" data-filter="fav" onclick="setQuickFilter(this)">⭐ 收藏</button>
         </div>
     </div>
@@ -1130,6 +1140,8 @@ body.dark .img-lazy {
             <button class="update-btn" data-scope="spark" id="updateSparkBtn" onclick="triggerUpdate('spark')">🔄 更新 SPARK 产品</button>
             <button class="update-btn" data-scope="spark64" id="updateSpark64Btn" onclick="triggerUpdate('spark64')">🔄 更新 SPARK 1:64 产品</button>
             <button class="update-btn" data-scope="inno" id="updateInnoBtn" onclick="triggerUpdate('inno')">🔄 更新 INNO 产品</button>
+            <button class="update-btn" data-scope="gcd" id="updateGcdBtn" onclick="triggerUpdate('gcd')">🔄 更新 GCD 产品</button>
+            <button class="update-btn" data-scope="dct" id="updateDctBtn" onclick="triggerUpdate('dct')">🔄 更新 DCT 产品</button>
         </div>
     </div>
 </div>
@@ -1262,7 +1274,9 @@ const categoryScopedFilters = {
     'spark': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'spark64': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'inno': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
-    'poprace': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav'])
+    'poprace': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'gcd': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'dct': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav'])
 };
 
 function readElementImages(element) {
@@ -1641,7 +1655,9 @@ function setupControlEventListeners() {
                 updateTopSpeedBtn: 'topspeed',
                 updateSparkBtn: 'spark',
                 updateSpark64Btn: 'spark64',
-                updateInnoBtn: 'inno'
+                updateInnoBtn: 'inno',
+                updateGcdBtn: 'gcd',
+                updateDctBtn: 'dct'
             };
             const updateType = updateTypeById[updateButton.id];
             if (updateType) triggerUpdate(updateType);
@@ -2239,6 +2255,20 @@ const updateButtons = {
         label: '🔄 更新 INNO 产品',
         runningText: '⏳ INNO 更新中...',
         startText: '🚀 INNO 更新已开始，请耐心等待...'
+    },
+    gcd: {
+        buttonId: 'updateGcdBtn',
+        endpoint: '/api/update-gcd',
+        label: '🔄 更新 GCD 产品',
+        runningText: '⏳ GCD 更新中...',
+        startText: '🚀 GCD 更新已开始，请耐心等待...'
+    },
+    dct: {
+        buttonId: 'updateDctBtn',
+        endpoint: '/api/update-dct',
+        label: '🔄 更新 DCT 产品',
+        runningText: '⏳ DCT 更新中...',
+        startText: '🚀 DCT 更新已开始，请耐心等待...'
     }
 };
 

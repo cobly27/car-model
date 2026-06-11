@@ -33,4 +33,9 @@ static/inno_image_cache/
 poprace_products_api.json
 poprace_update_summary.json
 static/poprace_image_cache/
+gcd_products_api.json
+gcd_update_summary.json
+dct_products_api.json
+dct_update_summary.json
 update_history.json
+backups/

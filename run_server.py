@@ -9,7 +9,7 @@ from flask import Flask, Response, jsonify, render_template, request, send_file
 
 from catalog.brands import update_config
 from catalog.config import BASE_DIR, HTML_PATH
-from catalog.data import load_catalog_response
+from catalog.data import favorites_slideshow_response, load_catalog_meta_response, load_catalog_response, query_products_response
 from catalog.health import catalog_health_csv, catalog_health_response
 from catalog.history import load_update_history
 from catalog.images import serve_inno_image, serve_topspeed_thumb
@@ -18,6 +18,13 @@ from catalog.tasks import UpdateManager
 app = Flask(__name__)
 os.chdir(BASE_DIR)
 update_manager = UpdateManager()
+
+
+def int_arg(name, default):
+    try:
+        return int(request.args.get(name, default))
+    except (TypeError, ValueError):
+        return default
 
 
 @app.route("/")
@@ -42,6 +49,46 @@ def serve_v2():
 def catalog_data():
     """返回当前产品 JSON 和分类统计，不改变原始字段结构。"""
     return jsonify(load_catalog_response())
+
+
+@app.route("/api/catalog-meta")
+def catalog_meta():
+    """返回不含产品明细的轻量目录元数据。"""
+    return jsonify(load_catalog_meta_response())
+
+
+@app.route("/api/products")
+def catalog_products():
+    """按分类、搜索、筛选和分页返回当前页产品。"""
+    favorite_skus = [
+        item.strip()
+        for item in request.args.get("favorites", "").split(",")
+        if item.strip()
+    ]
+    health_keys = [
+        item.strip()
+        for item in request.args.get("healthKeys", "").split(",")
+        if item.strip()
+    ]
+    return jsonify(query_products_response(
+        category_id=request.args.get("category", ""),
+        query=request.args.get("q", ""),
+        filter_value=request.args.get("filter", ""),
+        favorite_skus=favorite_skus,
+        health_keys=health_keys,
+        page=max(1, int_arg("page", 1)),
+        page_size=int_arg("pageSize", 20),
+    ))
+
+
+@app.route("/api/favorites-slideshow", methods=["POST"])
+def favorites_slideshow():
+    """返回收藏产品轮播所需的轻量产品数据。"""
+    payload = request.get_json(silent=True) or {}
+    skus = payload.get("skus", [])
+    if not isinstance(skus, list):
+        skus = []
+    return jsonify(favorites_slideshow_response(skus))
 
 
 @app.route("/api/catalog-health")
@@ -75,6 +122,12 @@ def get_update_config():
     return jsonify({"updates": update_config()})
 
 
+@app.route("/api/update-preflight/<brand_id>")
+def update_preflight(brand_id):
+    """更新前只读预检，不触发官网抓取。"""
+    return jsonify(update_manager.preflight(brand_id))
+
+
 @app.route("/api/topspeed-thumb")
 def topspeed_thumb():
     return serve_topspeed_thumb(request.args.get("src", "").strip())
@@ -85,39 +138,49 @@ def inno_image():
     return serve_inno_image(request.args.get("src", "").strip())
 
 
-@app.route("/api/update-ar")
+@app.route("/api/update-ar", methods=["GET", "POST"])
 def update_ar():
     return jsonify(update_manager.start("ar"))
 
 
-@app.route("/api/update-minigt")
+@app.route("/api/update-minigt", methods=["GET", "POST"])
 def update_minigt():
     return jsonify(update_manager.start("minigt"))
 
 
-@app.route("/api/update-topspeed")
+@app.route("/api/update-topspeed", methods=["GET", "POST"])
 def update_topspeed():
     return jsonify(update_manager.start("topspeed"))
 
 
-@app.route("/api/update-spark")
+@app.route("/api/update-spark", methods=["GET", "POST"])
 def update_spark():
     return jsonify(update_manager.start("spark"))
 
 
-@app.route("/api/update-spark64")
+@app.route("/api/update-spark64", methods=["GET", "POST"])
 def update_spark64():
     return jsonify(update_manager.start("spark64"))
 
 
-@app.route("/api/update-inno")
+@app.route("/api/update-inno", methods=["GET", "POST"])
 def update_inno():
     return jsonify(update_manager.start("inno"))
 
 
-@app.route("/api/update-poprace")
+@app.route("/api/update-poprace", methods=["GET", "POST"])
 def update_poprace():
     return jsonify(update_manager.start("poprace"))
+
+
+@app.route("/api/update-gcd", methods=["GET", "POST"])
+def update_gcd():
+    return jsonify(update_manager.start("gcd"))
+
+
+@app.route("/api/update-dct", methods=["GET", "POST"])
+def update_dct():
+    return jsonify(update_manager.start("dct"))
 
 
 @app.route("/api/status")

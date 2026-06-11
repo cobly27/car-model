@@ -1,5 +1,6 @@
 """Shared paths and constants for the catalog app."""
 
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -15,6 +16,8 @@ SUMMARY_PATHS = {
     "spark64": BASE_DIR / "spark64_update_summary.json",
     "inno": BASE_DIR / "inno_update_summary.json",
     "poprace": BASE_DIR / "poprace_update_summary.json",
+    "gcd": BASE_DIR / "gcd_update_summary.json",
+    "dct": BASE_DIR / "dct_update_summary.json",
 }
 
 TOPSPEED_THUMB_DIR = BASE_DIR / "static" / "topspeed_thumb_cache"
@@ -24,3 +27,5 @@ TOPSPEED_IMAGE_PATH_PREFIX = "/upload/"
 INNO_IMAGE_CACHE_DIR = BASE_DIR / "static" / "inno_image_cache"
 INNO_IMAGE_HOST = "www.inno-models.com"
 INNO_IMAGE_PATH_PREFIX = "/wp-content/uploads/"
+
+GENERATE_LEGACY_ON_UPDATE = os.environ.get("CATALOG_GENERATE_LEGACY_ON_UPDATE", "1") != "0"

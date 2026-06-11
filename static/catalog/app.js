@@ -1,6 +1,8 @@
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20400%20300'%3E%3Crect%20width='400'%20height='300'%20fill='%23f2f4f8'/%3E%3Ctext%20x='200'%20y='158'%20font-family='Arial'%20font-size='24'%20fill='%23909aaa'%20text-anchor='middle'%3ENo%20image%3C/text%3E%3C/svg%3E";
 const UI_STATE_KEY = "catalogV2UiState";
 const THEME_KEY = "minigtTheme";
+const FAVORITE_SLIDESHOW_DISMISSED_KEY = "favoriteSlideshowDismissed";
+const FAVORITE_SLIDESHOW_INTERVAL = 2300;
 
 const state = {
     data: null,
@@ -10,6 +12,11 @@ const state = {
     healthIssueFilter: null,
     productsByCategory: new Map(),
     stats: {},
+    pageStats: { "Released": 0, "Pre-Order": 0, "Sold Out": 0 },
+    filteredTotal: 0,
+    categoryTotal: 0,
+    currentPageProductsList: [],
+    productRequestToken: 0,
     currentCategory: "",
     currentFilter: "",
     currentPage: 1,
@@ -30,6 +37,12 @@ const state = {
     modalIndex: 0,
     modalName: "",
     modalToken: 0,
+    slideshowItems: [],
+    slideshowIndex: 0,
+    slideshowTimer: null,
+    slideshowPlaying: true,
+    slideshowToken: 0,
+    slideshowFailedUrls: new Set(),
     lastFavoriteSku: "",
 };
 
@@ -40,6 +53,8 @@ const categoryScopedFilters = {
     "spark64": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "inno": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "poprace": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+    "gcd": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+    "dct": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "ar": new Set(["", "fav"]),
 };
 
@@ -70,6 +85,10 @@ function saveFavorites() {
     const values = [...state.favorites];
     localStorage.setItem("minigtFavorites", JSON.stringify(values));
     localStorage.setItem("minigt_favorites", JSON.stringify(values));
+}
+
+function favoriteSkus() {
+    return [...state.favorites].filter(Boolean);
 }
 
 function loadUiState() {
@@ -105,6 +124,8 @@ function productUrl(product) {
     if (product.categoryId === "spark" || product.categoryId === "spark64") return `https://www.sparkmodel.com/en/products/${detailId}`;
     if (product.categoryId === "inno") return product.inno_url || "https://www.inno-models.com/our-products/?jsf=jet-engine:shop-loop&tax=pa_scale:1-64";
     if (product.categoryId === "poprace") return product.poprace_source_url || "https://www.xcartoys.com/S_series";
+    if (product.categoryId === "gcd") return product.gcd_url || "https://www.gcd-models.com/category/products/gcd/";
+    if (product.categoryId === "dct") return product.dct_url || "https://www.gcd-models.com/category/products/dct/";
     return `https://minigt.tsm-models.com/index.php?action=product-detail&id=${detailId}`;
 }
 
@@ -213,7 +234,7 @@ function getCategory(categoryId = state.currentCategory) {
 
 async function loadCatalog() {
     const [catalogResponse, updateConfigResponse] = await Promise.all([
-        fetch("/api/catalog-data"),
+        fetch("/api/catalog-meta"),
         fetch("/api/update-config"),
     ]);
     if (!catalogResponse.ok) throw new Error(`catalog HTTP ${catalogResponse.status}`);
@@ -273,7 +294,7 @@ function applyCatalogPayload(data, updateConfig, preserveState = false, savedSta
 
 async function refreshCatalogDataAfterUpdate() {
     const [catalogResponse, updateConfigResponse, healthResponse] = await Promise.all([
-        fetch("/api/catalog-data"),
+        fetch("/api/catalog-meta"),
         fetch("/api/update-config"),
         fetch("/api/catalog-health"),
     ]);
@@ -304,13 +325,15 @@ function initializeUI() {
     syncScopedControls();
     applyFilter();
     refreshHealthBadge();
+    syncFavoriteSlideshowButton();
+    scheduleFavoriteSlideshowAutoOpen();
     $("#loadingState").classList.add("hidden");
 }
 
 function renderCategoryOptions() {
     const select = $("#categorySelect");
     select.innerHTML = state.data.categories.map(category => {
-        const count = category.products?.length || 0;
+        const count = category.count ?? category.products?.length ?? 0;
         return `<option value="${escapeHtml(category.id)}">全部 · ${escapeHtml(category.name)} (${count})</option>`;
     }).join("");
     select.value = state.currentCategory;
@@ -326,7 +349,7 @@ function categoryDisplay(categoryId) {
     if (!category) return { name: "全部", count: 0 };
     return {
         name: category.name,
-        count: category.products?.length || 0,
+        count: category.count ?? category.products?.length ?? 0,
     };
 }
 
@@ -334,7 +357,7 @@ function renderCategoryMenu() {
     const menu = $("#categoryMenu");
     if (!menu || !state.data) return;
     menu.innerHTML = state.data.categories.map(category => {
-        const count = category.products?.length || 0;
+        const count = category.count ?? category.products?.length ?? 0;
         const selected = category.id === state.currentCategory;
         return `
             <button class="category-option${selected ? " selected" : ""}" type="button" role="option" aria-selected="${selected}" data-category="${escapeHtml(category.id)}">
@@ -437,6 +460,7 @@ function bindEvents() {
     $("#healthBtn").addEventListener("click", showCatalogHealth);
     $("#healthExportBtn").addEventListener("click", exportHealthIssues);
     $("#historyBtn").addEventListener("click", showUpdateHistory);
+    $("#favoriteSlideshowBtn").addEventListener("click", () => openFavoriteSlideshow({ manual: true }));
     $("#statusPanel").addEventListener("click", handleStatusPanelClick);
     $("#updateActions").addEventListener("click", event => {
         const button = event.target.closest(".update-btn");
@@ -451,6 +475,13 @@ function bindEvents() {
     $("#modalNext").addEventListener("click", nextModalImage);
     $("#modalOverlay").addEventListener("click", event => {
         if (event.target.id === "modalOverlay") closeModal();
+    });
+    $("#slideshowClose").addEventListener("click", closeFavoriteSlideshow);
+    $("#slideshowPrev").addEventListener("click", () => showPreviousFavoriteSlide(true));
+    $("#slideshowNext").addEventListener("click", () => showNextFavoriteSlide(true));
+    $("#slideshowToggle").addEventListener("click", toggleFavoriteSlideshowPlayback);
+    $("#favoriteSlideshowOverlay").addEventListener("click", event => {
+        if (event.target.id === "favoriteSlideshowOverlay") closeFavoriteSlideshow();
     });
     document.addEventListener("keydown", handleKeydown);
 
@@ -550,27 +581,38 @@ function currentSourceProducts() {
     return state.productsByCategory.get(state.currentCategory) || [];
 }
 
-function applyFilter() {
+async function applyFilter() {
     const query = $("#search").value.trim().toLowerCase();
-    const products = currentSourceProducts();
+    state.searchQuery = query;
+    const requestToken = ++state.productRequestToken;
     const healthKeys = state.healthIssueFilter?.categoryId === state.currentCategory
-        ? state.healthIssueFilter.keys
-        : null;
-    state.filteredProducts = products.filter(product => {
-        const sku = String(product.sku || "").toLowerCase();
-        const name = String(product.name || "").toLowerCase();
-        const detailId = String(product.detail_id || "").toLowerCase();
-        const matchesSearch = !query || sku.includes(query) || name.includes(query) || detailId.includes(query);
-        const matchesHealthIssue = !healthKeys
-            || healthKeys.has(String(product.detail_id || ""))
-            || healthKeys.has(String(product.sku || ""));
-        const matchesStatus = !state.currentFilter
-            ? true
-            : state.currentFilter === "fav"
-                ? state.favorites.has(product.sku)
-                : product.status === state.currentFilter;
-        return matchesSearch && matchesHealthIssue && matchesStatus;
+        ? [...state.healthIssueFilter.keys]
+        : [];
+    const params = new URLSearchParams({
+        category: state.currentCategory,
+        q: query,
+        filter: state.currentFilter,
+        page: String(state.currentPage),
+        pageSize: String(state.pageSize),
     });
+    if (state.currentFilter === "fav") {
+        params.set("favorites", [...state.favorites].join(","));
+    }
+    if (healthKeys.length) {
+        params.set("healthKeys", healthKeys.join(","));
+    }
+
+    const response = await fetch(`/api/products?${params.toString()}`);
+    if (!response.ok) throw new Error(`products HTTP ${response.status}`);
+    const pageData = await response.json();
+    if (requestToken !== state.productRequestToken) return;
+
+    state.filteredProducts = pageData.products || [];
+    state.currentPageProductsList = state.filteredProducts;
+    state.filteredTotal = pageData.total || 0;
+    state.categoryTotal = pageData.categoryTotal || 0;
+    state.pageStats = pageData.stats || { "Released": 0, "Pre-Order": 0, "Sold Out": 0 };
+    state.currentPage = pageData.page || state.currentPage;
 
     const totalPages = totalPagesForCurrentFilter();
     state.currentPage = Math.max(1, Math.min(state.currentPage, totalPages));
@@ -583,13 +625,10 @@ function applyFilter() {
 
 function updateStats() {
     const category = getCategory();
-    const totalForCategory = category?.products?.length || 0;
-    const counts = { "Released": 0, "Pre-Order": 0, "Sold Out": 0 };
-    state.filteredProducts.forEach(product => {
-        if (counts[product.status] !== undefined) counts[product.status] += 1;
-    });
+    const totalForCategory = state.categoryTotal || category?.count || category?.products?.length || 0;
+    const counts = state.pageStats || { "Released": 0, "Pre-Order": 0, "Sold Out": 0 };
     $("#statsGroup").innerHTML = `
-        <span class="stat-badge">显示 ${state.filteredProducts.length} / 共 ${totalForCategory}</span>
+        <span class="stat-badge">显示 ${state.filteredTotal} / 共 ${totalForCategory}</span>
         ${state.healthIssueFilter?.categoryId === state.currentCategory ? '<span class="stat-badge health-active">🩺 问题产品</span>' : ''}
         <span class="stat-badge released">✅ ${counts["Released"]}</span>
         <span class="stat-badge preorder">📦 ${counts["Pre-Order"]}</span>
@@ -598,12 +637,11 @@ function updateStats() {
 }
 
 function totalPagesForCurrentFilter() {
-    return Math.max(1, Math.ceil(state.filteredProducts.length / state.pageSize));
+    return Math.max(1, Math.ceil(state.filteredTotal / state.pageSize));
 }
 
 function currentPageProducts() {
-    const start = (state.currentPage - 1) * state.pageSize;
-    return state.filteredProducts.slice(start, start + state.pageSize);
+    return state.currentPageProductsList;
 }
 
 function renderPagination() {
@@ -686,10 +724,9 @@ function handlePaginationClick(event) {
     }
     state.currentPage = Math.max(1, Math.min(state.currentPage, totalPages));
     state.pageByCategory[state.currentCategory] = state.currentPage;
-        renderPagination();
-        renderCurrentPage();
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        saveUiState();
+    applyFilter();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    saveUiState();
 }
 
 function setPageSize(pageSize) {
@@ -698,8 +735,7 @@ function setPageSize(pageSize) {
     state.currentPage = 1;
     state.pageByCategory[state.currentCategory] = 1;
     document.querySelectorAll(".page-size-picker.open").forEach(item => item.classList.remove("open"));
-    renderPagination();
-    renderCurrentPage();
+    applyFilter();
     saveUiState();
 }
 
@@ -717,8 +753,7 @@ function handlePaginationKeydown(event) {
     if (event.key === "Enter") {
         state.currentPage = clampPage(event.target.value);
         state.pageByCategory[state.currentCategory] = state.currentPage;
-        renderPagination();
-        renderCurrentPage();
+        applyFilter();
         window.scrollTo({ top: 0, behavior: "smooth" });
         saveUiState();
     }
@@ -786,6 +821,8 @@ function renderTableRow(product) {
 }
 
 function productByIndex(index) {
+    const currentProduct = state.currentPageProductsList.find(item => item.index === index);
+    if (currentProduct) return currentProduct;
     for (const products of state.productsByCategory.values()) {
         const product = products.find(item => item.index === index);
         if (product) return product;
@@ -824,10 +861,187 @@ function toggleFavorite(sku) {
         showToast("已收藏");
     }
     saveFavorites();
+    syncFavoriteSlideshowButton();
     applyFilter();
     setTimeout(() => {
         if (state.lastFavoriteSku === sku) state.lastFavoriteSku = "";
     }, 360);
+}
+
+function syncFavoriteSlideshowButton() {
+    const button = $("#favoriteSlideshowBtn");
+    if (!button) return;
+    const count = state.favorites.size;
+    button.disabled = count === 0;
+    button.classList.toggle("control-hidden", count === 0);
+    button.title = count ? `播放 ${count} 个收藏产品` : "暂无收藏产品";
+}
+
+function scheduleFavoriteSlideshowAutoOpen() {
+    if (!state.favorites.size) return;
+    if (sessionStorage.getItem(FAVORITE_SLIDESHOW_DISMISSED_KEY) === "1") return;
+    setTimeout(() => openFavoriteSlideshow({ manual: false }), 650);
+}
+
+async function fetchFavoriteSlideshowItems() {
+    const skus = favoriteSkus();
+    if (!skus.length) return [];
+    const response = await fetch("/api/favorites-slideshow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skus }),
+    });
+    if (!response.ok) throw new Error(`favorites slideshow HTTP ${response.status}`);
+    const data = await response.json();
+    return (data.products || []).map(item => {
+        const src = item.image || item.images?.[0] || PLACEHOLDER_IMAGE;
+        return {
+            ...item,
+            displayImage: imageForDisplay(src, item.categoryId, "modal"),
+        };
+    }).filter(item => item.displayImage && item.displayImage !== PLACEHOLDER_IMAGE);
+}
+
+async function openFavoriteSlideshow({ manual = false } = {}) {
+    if (!state.favorites.size) {
+        if (manual) showToast("暂无收藏产品");
+        return;
+    }
+    if (!manual && sessionStorage.getItem(FAVORITE_SLIDESHOW_DISMISSED_KEY) === "1") return;
+
+    try {
+        const items = await fetchFavoriteSlideshowItems();
+        if (!items.length) {
+            if (manual) showToast("收藏产品暂无可播放图片");
+            return;
+        }
+        state.slideshowItems = items;
+        state.slideshowIndex = 0;
+        state.slideshowPlaying = true;
+        state.slideshowFailedUrls = new Set();
+        $("#favoriteSlideshowOverlay").classList.add("active");
+        document.body.style.overflow = "hidden";
+        preloadFavoriteSlideshowImages();
+        updateFavoriteSlide(true);
+        startFavoriteSlideshowTimer();
+    } catch (error) {
+        console.error(error);
+        if (manual) showStatusPanel("⚠️ 无法读取收藏轮播数据", "error", 4000);
+    }
+}
+
+function favoriteSlideshowActive() {
+    return $("#favoriteSlideshowOverlay")?.classList.contains("active");
+}
+
+function startFavoriteSlideshowTimer() {
+    stopFavoriteSlideshowTimer();
+    if (!state.slideshowPlaying || state.slideshowItems.length <= 1) return;
+    state.slideshowTimer = setInterval(() => showNextFavoriteSlide(false), FAVORITE_SLIDESHOW_INTERVAL);
+}
+
+function stopFavoriteSlideshowTimer() {
+    clearInterval(state.slideshowTimer);
+    state.slideshowTimer = null;
+}
+
+function preloadFavoriteSlideshowImages() {
+    const urls = state.slideshowItems.map(item => item.displayImage);
+    const current = urls[state.slideshowIndex];
+    const next = urls[(state.slideshowIndex + 1) % urls.length];
+    uniqueUrls([current, next]).forEach(src => preloadImage(src, "high").catch(() => {}));
+    preloadInBatches(urls, { firstBatch: 4, batchSize: 6 });
+}
+
+function setFavoriteSlideIndex(index) {
+    const total = state.slideshowItems.length;
+    if (!total) return;
+    let nextIndex = (index + total) % total;
+    for (let attempts = 0; attempts < total; attempts += 1) {
+        const item = state.slideshowItems[nextIndex];
+        if (!state.slideshowFailedUrls.has(item.displayImage)) break;
+        nextIndex = (nextIndex + (index >= state.slideshowIndex ? 1 : -1) + total) % total;
+    }
+    state.slideshowIndex = nextIndex;
+    updateFavoriteSlide();
+    if (state.slideshowPlaying) startFavoriteSlideshowTimer();
+}
+
+function showNextFavoriteSlide(userAction = false) {
+    setFavoriteSlideIndex(state.slideshowIndex + 1);
+    if (userAction) showToast("下一张收藏图");
+}
+
+function showPreviousFavoriteSlide(userAction = false) {
+    setFavoriteSlideIndex(state.slideshowIndex - 1);
+    if (userAction) showToast("上一张收藏图");
+}
+
+function updateFavoriteSlide(forceBlank = false) {
+    const item = state.slideshowItems[state.slideshowIndex];
+    if (!item) return;
+
+    const overlay = $("#favoriteSlideshowOverlay");
+    const img = $("#slideshowImg");
+    const token = ++state.slideshowToken;
+    overlay.classList.remove("loading");
+    img.classList.add("switching-out");
+    if (forceBlank) img.style.opacity = "0";
+
+    $("#slideshowSku").textContent = item.sku || "";
+    $("#slideshowName").textContent = item.name || "收藏产品";
+    $("#slideshowStatus").textContent = item.status || "Released";
+    $("#slideshowStatus").className = `slideshow-status ${statusClass(item.status)}`;
+    $("#slideshowCounter").textContent = `${state.slideshowIndex + 1} / ${state.slideshowItems.length}`;
+    $("#slideshowToggle").textContent = state.slideshowPlaying ? "⏸ 暂停" : "▶ 播放";
+
+    preloadImage(item.displayImage, "high").then(() => {
+        if (token !== state.slideshowToken) return;
+        setTimeout(() => {
+            if (token !== state.slideshowToken) return;
+            img.src = item.displayImage;
+            img.alt = item.name || item.sku || "收藏产品";
+            img.style.opacity = "1";
+            img.classList.remove("switching-out");
+            img.classList.add("zoom-in");
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => img.classList.remove("zoom-in"));
+            });
+            preloadFavoriteSlideshowImages();
+        }, 150);
+    }).catch(() => {
+        if (token !== state.slideshowToken) return;
+        state.slideshowFailedUrls.add(item.displayImage);
+        overlay.classList.remove("loading");
+        const available = state.slideshowItems.some(slide => !state.slideshowFailedUrls.has(slide.displayImage));
+        if (available) {
+            showNextFavoriteSlide(false);
+        } else {
+            img.src = PLACEHOLDER_IMAGE;
+            img.alt = "收藏产品图片加载失败";
+            img.style.opacity = "1";
+            img.classList.remove("switching-out", "switching-in");
+            $("#slideshowName").textContent = "收藏产品图片加载失败";
+            stopFavoriteSlideshowTimer();
+        }
+    });
+}
+
+function toggleFavoriteSlideshowPlayback() {
+    state.slideshowPlaying = !state.slideshowPlaying;
+    $("#slideshowToggle").textContent = state.slideshowPlaying ? "⏸ 暂停" : "▶ 播放";
+    if (state.slideshowPlaying) {
+        startFavoriteSlideshowTimer();
+    } else {
+        stopFavoriteSlideshowTimer();
+    }
+}
+
+function closeFavoriteSlideshow() {
+    sessionStorage.setItem(FAVORITE_SLIDESHOW_DISMISSED_KEY, "1");
+    stopFavoriteSlideshowTimer();
+    $("#favoriteSlideshowOverlay").classList.remove("active", "loading");
+    document.body.style.overflow = $("#modalOverlay").classList.contains("active") ? "hidden" : "";
 }
 
 function copyToClipboard(text) {
@@ -917,6 +1131,16 @@ function closeModal() {
 }
 
 function handleKeydown(event) {
+    if (favoriteSlideshowActive()) {
+        if (event.key === "Escape") closeFavoriteSlideshow();
+        if (event.key === "ArrowLeft") showPreviousFavoriteSlide(true);
+        if (event.key === "ArrowRight") showNextFavoriteSlide(true);
+        if (event.key === " " || event.key === "Spacebar") {
+            event.preventDefault();
+            toggleFavoriteSlideshowPlayback();
+        }
+        return;
+    }
     if (!$("#modalOverlay").classList.contains("active")) return;
     if (event.key === "Escape") closeModal();
     if (event.key === "ArrowLeft") previousModalImage();
@@ -1306,17 +1530,25 @@ function updateProgressTitle() {
     return config.runningText || `${config.label.replace(/^更新\s*/, "")}更新中...`;
 }
 
-function showUpdateProgressPanel(message = "正在更新中...") {
-    const progress = updateProgressFromMessage(message);
+function showUpdateProgressPanel(message = "正在更新中...", status = null) {
+    const progress = status?.totalSteps
+        ? {
+            current: status.step || 0,
+            total: status.totalSteps,
+            percent: Math.max(8, Math.min(100, status.progress || 0)),
+            indeterminate: false,
+        }
+        : updateProgressFromMessage(message);
     const progressText = progress.total ? `${progress.current} / ${progress.total}` : "正在准备";
     const progressClass = progress.indeterminate ? " indeterminate" : "";
+    const stepText = status?.stepLabel || message;
     showStatusHtmlPanel(`
         <div class="update-progress-card">
             <div class="update-progress-head">
                 <span class="update-progress-icon" aria-hidden="true">⏳</span>
                 <div>
                     <div class="update-progress-title">${escapeHtml(updateProgressTitle())}</div>
-                    <div class="update-progress-step">${escapeHtml(message)}</div>
+                    <div class="update-progress-step">${escapeHtml(stepText)}</div>
                 </div>
                 <strong>${escapeHtml(progressText)}</strong>
             </div>
@@ -1343,9 +1575,21 @@ function triggerUpdate(type) {
     if (!config) return;
     state.activeUpdateType = type;
     setUpdateButtonsDisabled(true, type);
-    showUpdateProgressPanel("正在连接服务器...");
+    showUpdateProgressPanel("正在执行更新前预检...");
 
-    fetch(config.endpoint)
+    fetch(config.preflightEndpoint || `/api/update-preflight/${encodeURIComponent(type)}`)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then(preflight => {
+            if (!preflight.ok) {
+                const issues = preflight.issues?.length ? `\n${preflight.issues.join("\n")}` : "";
+                throw new Error(`${preflight.message || "预检失败"}${issues}`);
+            }
+            showUpdateProgressPanel("预检通过，正在启动更新...");
+            return fetch(config.endpoint, { method: config.method || "POST" });
+        })
         .then(response => {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return response.json();
@@ -1356,7 +1600,7 @@ function triggerUpdate(type) {
         })
         .catch(error => {
             console.error(error);
-            showStatusPanel("⚠️ 无法触发更新，请确认本地服务器正在运行", "error");
+            showStatusPanel(`⚠️ 无法触发更新：${error.message}`, "error");
             setUpdateButtonsDisabled(false);
             state.activeUpdateType = "";
         });
@@ -1369,7 +1613,7 @@ function startStatusCheck() {
             .then(response => response.json())
             .then(data => {
                 if (data.running) {
-                    showUpdateProgressPanel(data.log || "正在更新中...");
+                    showUpdateProgressPanel(data.log || "正在更新中...", data);
                     return;
                 }
                 clearInterval(state.statusTimer);

@@ -4,10 +4,18 @@ import datetime
 import shutil
 import subprocess
 
-from .config import BASE_DIR, HTML_PATH, PRODUCTS_PATH
+from .config import BASE_DIR, GENERATE_LEGACY_ON_UPDATE, HTML_PATH, PRODUCTS_PATH
 
 
 def run_step(step_name, script_name):
+    if script_name == "generate_minigt_html.py" and not GENERATE_LEGACY_ON_UPDATE:
+        return subprocess.CompletedProcess(
+            ["python3", script_name],
+            0,
+            stdout="已跳过旧版 HTML 生成（CATALOG_GENERATE_LEGACY_ON_UPDATE=0）",
+            stderr="",
+        )
+
     result = subprocess.run(
         ["python3", script_name],
         capture_output=True,

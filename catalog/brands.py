@@ -3,6 +3,8 @@
 from .config import SUMMARY_PATHS
 from .summaries import (
     format_ar_update_summary,
+    format_dct_update_summary,
+    format_gcd_update_summary,
     format_inno_update_summary,
     format_minigt_update_summary,
     format_poprace_update_summary,
@@ -142,6 +144,42 @@ BRANDS = [
             ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
         ],
     },
+    {
+        "id": "gcd",
+        "name": "GCD产品",
+        "category_id": "gcd",
+        "endpoint": "/api/update-gcd",
+        "button_label": "🔄 更新 GCD 产品",
+        "running_label": "⏳ GCD 更新中...",
+        "started_message": "🚀 GCD 更新已开始，请耐心等待...",
+        "start_log": "开始更新 GCD 产品...",
+        "summary_path": SUMMARY_PATHS["gcd"],
+        "summary": format_gcd_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 GCD 产品和详情图...", "抓取 GCD 产品", "scrape_gcd_api.py"),
+            ("3/4 合并 GCD 产品清单...", "合并 GCD 产品清单", "update_gcd_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "dct",
+        "name": "DCT产品",
+        "category_id": "dct",
+        "endpoint": "/api/update-dct",
+        "button_label": "🔄 更新 DCT 产品",
+        "running_label": "⏳ DCT 更新中...",
+        "started_message": "🚀 DCT 更新已开始，请耐心等待...",
+        "start_log": "开始更新 DCT 产品...",
+        "summary_path": SUMMARY_PATHS["dct"],
+        "summary": format_dct_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 DCT 产品和详情图...", "抓取 DCT 产品", "scrape_dct_api.py"),
+            ("3/4 合并 DCT 产品清单...", "合并 DCT 产品清单", "update_dct_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
 ]
 
 BRANDS_BY_ID = {brand["id"]: brand for brand in BRANDS}
@@ -154,6 +192,8 @@ def update_config():
             "name": brand["name"],
             "categoryId": brand["category_id"],
             "endpoint": brand["endpoint"],
+            "method": "POST",
+            "preflightEndpoint": f"/api/update-preflight/{brand['id']}",
             "label": brand["button_label"],
             "runningText": brand["running_label"],
             "startText": brand["started_message"],
