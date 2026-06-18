@@ -108,8 +108,6 @@ def product_url(detail_id, category_id='mini-gt'):
         return 'https://www.inno-models.com/our-products/?jsf=jet-engine:shop-loop&tax=pa_scale:1-64'
     if category_id == 'poprace':
         return 'https://www.xcartoys.com/S_series'
-<<<<<<< Updated upstream
-=======
     if category_id == 'gcd':
         product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'gcd'), None)
         if product and product.get('gcd_url'):
@@ -137,7 +135,6 @@ def product_url(detail_id, category_id='mini-gt'):
         if product and product.get('trendshobby_url'):
             return product.get('trendshobby_url')
         return 'https://www.instagram.com/trends.hobby/'
->>>>>>> Stashed changes
     return f'https://minigt.tsm-models.com/index.php?action=product-detail&id={detail_id}'
 
 def preview_image_url(image, category_id='mini-gt'):
@@ -173,92 +170,6 @@ def get_images(p):
     elif p.get('image'):
         images = [p['image']]
     return images or [PLACEHOLDER_IMAGE]
-
-table_rows = ''
-card_items = ''
-for i, p in enumerate(products):
-    name = esc(p['name'])
-    sku = esc(p['sku'])
-    pid = p.get('detail_id', '')
-    st = p.get('status', '')
-    sc = status_class(st)
-    category_id = p.get('categoryId', 'mini-gt')
-    images = get_images(p)
-    preview_limit = 1 if category_id == 'topspeed' else 3
-    preview_images = images[:preview_limit]
-    modal_images = [modal_image_url(img, category_id) for img in images]
-    remaining_image_count = max(0, len(images) - preview_limit)
-    
-    # 生成图片 HTML - 每张图单独绑定点击事件（添加懒加载）
-    img_html = ''
-    for idx, img in enumerate(preview_images):
-        preview_img = preview_image_url(img, category_id)
-        img_html += f'<img src="{esc(preview_img)}" data-src="{esc(preview_img)}" alt="{name}" class="thumb-img img-lazy" loading="lazy" onclick="event.stopPropagation();openMultiModalFromElement(this.closest(\'tr\') || this.closest(\'.card-item\'), {idx})" onerror="handleImageError(this, {idx})">'
-    
-    # 生成图片数据的 JSON 字符串，用于 data 属性
-    images_json_data = json.dumps(modal_images, ensure_ascii=False)
-    images_json_escaped = esc(images_json_data)
-    
-    # 表格行 - 使用索引从 JS 数组获取数据
-    safe_name = name.replace("'", "&apos;")
-    safe_name_data_attr = name.replace('"', '&quot;')
-    table_rows += '''
-<tr data-sku="{0}" data-name="{9}" data-status="{2}" data-index="{4}" data-category="{11}" data-images="{10}">
-    <td class="num">{4}</td>
-    <td class="sku" title="点击复制编号" onclick="copySKU(\'{0}\', this)">{0}</td>
-    <td class="name-cell">
-        <a href="{5}" target="_blank" rel="noopener" title="在官网查看详情">{1}</a>
-        <button class="copy-name-btn" onclick="copyText(\'{1}\', this)" title="复制名称">📋</button>
-    </td>
-    <td class="status-cell"><span class="badge {6}">{2}</span></td>
-    <td class="img-cell">
-        <div class="img-triplet" onclick="openMultiModalFromElement(this.closest(\'tr\'), 0)">
-            {7}
-            {8}
-        </div>
-    </td>
-    <td class="fav-cell">
-        <button class="fav-btn" onclick="toggleFavorite(\'{0}\', this)" title="收藏">☆</button>
-    </td>
-</tr>'''.format(
-        sku, safe_name, st, '', i + 1,
-        product_url(pid, p.get('categoryId', 'mini-gt')), sc,
-        img_html,
-        f'<span class="img-count" onclick="event.stopPropagation();openMultiModalFromElement(this.closest(\'tr\'), 0)">+{remaining_image_count}</span>' if remaining_image_count > 0 else '',
-        safe_name_data_attr,
-        images_json_escaped,
-        category_id,
-        product_url(pid, category_id)
-    )
-    
-    # 卡片项
-    no_image_class = 'is-placeholder' if images[0] == PLACEHOLDER_IMAGE else ''
-    card_items += '''
-<div class="card-item" data-sku="{0}" data-name="{9}" data-status="{2}" data-index="{4}" data-category="{11}" data-images="{10}">
-    <div class="card-img {13}" onclick="openMultiModalFromElement(this.closest(\'.card-item\'), 0)">
-        <img src="{5}" data-src="{5}" alt="{1}" loading="lazy" onload="this.classList.add('loaded')" onerror="handleImageError(this, 0)">
-        <div class="card-img-overlay">
-            <span class="card-img-count">{6} 图</span>
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="card-sku" onclick="copySKU(\'{0}\', this)">{0}</div>
-        <a href="{12}" target="_blank" rel="noopener" class="card-name" title="在官网查看详情">{1}</a>
-        <div class="card-footer">
-            <span class="badge {7}">{2}</span>
-            <button class="fav-btn" onclick="toggleFavorite(\'{0}\', this)" title="收藏">☆</button>
-        </div>
-    </div>
-</div>'''.format(
-        sku, safe_name, st, '', i + 1,
-        esc(preview_image_url(images[0], category_id)), len(images), sc,
-        '',
-        safe_name_data_attr,
-        images_json_escaped,
-        category_id,
-        product_url(pid, category_id),
-        no_image_class
-    )
 
 # 模板使用单大括号，避免处理问题
 html = '''<!DOCTYPE html>
@@ -1139,15 +1050,9 @@ body.dark .img-lazy {
         <select class="quick-filter active category-select" id="categoryDropdownBtn" data-filter="" onchange="selectCategoryFromDropdown(this.value)" aria-label="选择分类">
             {category_options_html}
         </select>
-<<<<<<< Updated upstream
-        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
-        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
-        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
-=======
         <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
         <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
         <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
->>>>>>> Stashed changes
         <button class="quick-filter fav-only" data-filter="fav" onclick="setQuickFilter(this)">⭐ 收藏</button>
         </div>
     </div>
@@ -1166,14 +1071,11 @@ body.dark .img-lazy {
             <button class="update-btn" data-scope="spark" id="updateSparkBtn" onclick="triggerUpdate('spark')">🔄 更新 SPARK 产品</button>
             <button class="update-btn" data-scope="spark64" id="updateSpark64Btn" onclick="triggerUpdate('spark64')">🔄 更新 SPARK 1:64 产品</button>
             <button class="update-btn" data-scope="inno" id="updateInnoBtn" onclick="triggerUpdate('inno')">🔄 更新 INNO 产品</button>
-<<<<<<< Updated upstream
-=======
             <button class="update-btn" data-scope="gcd" id="updateGcdBtn" onclick="triggerUpdate('gcd')">🔄 更新 GCD 产品</button>
             <button class="update-btn" data-scope="dct" id="updateDctBtn" onclick="triggerUpdate('dct')">🔄 更新 DCT 产品</button>
             <button class="update-btn" data-scope="tarmacworks" id="updateTarmacworksBtn" onclick="triggerUpdate('tarmacworks')">🔄 更新 TARMAC WORKS 产品</button>
             <button class="update-btn" data-scope="greenlight" id="updateGreenlightBtn" onclick="triggerUpdate('greenlight')">🔄 更新 GreenLight 产品</button>
             <button class="update-btn" data-scope="trendshobby" id="updateTrendsHobbyBtn" onclick="triggerUpdate('trendshobby')">🔄 更新 TH 产品</button>
->>>>>>> Stashed changes
         </div>
     </div>
 </div>
@@ -1304,16 +1206,12 @@ const categoryScopedFilters = {
     'spark': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'spark64': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'inno': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
-<<<<<<< Updated upstream
-    'poprace': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav'])
-=======
     'poprace': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'gcd': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'dct': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'tarmacworks': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'greenlight': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'trendshobby': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav'])
->>>>>>> Stashed changes
 };
 const productByIndex = new Map(productsData.map(product => [String(product.index), product]));
 
@@ -1840,16 +1738,12 @@ function setupControlEventListeners() {
                 updateTopSpeedBtn: 'topspeed',
                 updateSparkBtn: 'spark',
                 updateSpark64Btn: 'spark64',
-<<<<<<< Updated upstream
-                updateInnoBtn: 'inno'
-=======
                 updateInnoBtn: 'inno',
                 updateGcdBtn: 'gcd',
                 updateDctBtn: 'dct',
                 updateTarmacworksBtn: 'tarmacworks',
                 updateGreenlightBtn: 'greenlight',
                 updateTrendsHobbyBtn: 'trendshobby'
->>>>>>> Stashed changes
             };
             const updateType = updateTypeById[updateButton.id];
             if (updateType) triggerUpdate(updateType);
@@ -2408,8 +2302,6 @@ const updateButtons = {
         label: '🔄 更新 INNO 产品',
         runningText: '⏳ INNO 更新中...',
         startText: '🚀 INNO 更新已开始，请耐心等待...'
-<<<<<<< Updated upstream
-=======
     },
     gcd: {
         buttonId: 'updateGcdBtn',
@@ -2445,7 +2337,6 @@ const updateButtons = {
         label: '🔄 更新 TH 产品',
         runningText: '⏳ TH 更新中...',
         startText: '🚀 TH 更新已开始，请耐心等待...'
->>>>>>> Stashed changes
     }
 };
 
@@ -2641,13 +2532,12 @@ html = html.replace('{count_preorder}', str(count_preorder))
 html = html.replace('{count_soldout}', str(count_soldout))
 html = html.replace('{category_tabs_html}', category_tabs_html)
 html = html.replace('{category_options_html}', category_options_html.strip())
-html = html.replace('{table_rows}', table_rows)
-html = html.replace('{card_items}', card_items)
 
 # 最后替换 JSON 占位符
 html = html.replace('PRODUCTS_JSON_PLACEHOLDER', products_json_str)
 html = html.replace('CATEGORY_STATS_PLACEHOLDER', category_stats_json)
 html = html.replace('PLACEHOLDER_IMAGE_PLACEHOLDER', json.dumps(PLACEHOLDER_IMAGE))
+html = "\n".join(line.rstrip() for line in html.splitlines()) + "\n"
 
 # ── 写入文件 ──
 with HTML_PATH.open('w', encoding='utf-8') as f:
