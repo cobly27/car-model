@@ -1,0 +1,39 @@
+{
+  "sources": [
+    {
+      "id": "diecasttalk",
+      "name": "DiecastTalk",
+      "url": "https://shopdiecasttalk.com/collections/trends-hobby/products.json?limit=250",
+      "product_base": "https://shopdiecasttalk.com/products/",
+      "count": 14
+    },
+    {
+      "id": "mobilegarage",
+      "name": "Mobile Garage HK",
+      "url": "https://www.mobilegaragehk.com/collections/trends-hobby/products.json?limit=250",
+      "product_base": "https://www.mobilegaragehk.com/products/",
+      "count": 22
+    },
+    {
+      "id": "treasuredmodels",
+      "name": "Treasured Models",
+      "url": "https://treasuredmodels.com/collections/trends-hobby/products.json?limit=250",
+      "product_base": "https://treasuredmodels.com/products/",
+      "count": 31
+    }
+  ],
+  "source_count": 3,
+  "raw_count": 67,
+  "fetched_count": 67,
+  "duplicate_count": 0,
+  "max_images_per_product": 4,
+  "image_success_count": 67,
+  "image_failed_count": 0,
+  "original_trendshobby_count": 0,
+  "added_count": 67,
+  "updated_count": 0,
+  "unchanged_count": 0,
+  "preserved_count": 0,
+  "final_trendshobby_count": 67,
+  "total_products": 12084
+}

@@ -1,0 +1,402 @@
+[
+  {
+    "detail_id": "723",
+    "sku": "GL-723",
+    "name": "IndyCar",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/05/NICS_POS_FULL_COLOR.png",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/05/NICS_POS_FULL_COLOR.png"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/indycar-2/",
+    "greenlight_slug": "indycar-2",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:64"
+    ],
+    "greenlight_display_order": 1,
+    "greenlight_short_description": "1:64 2021 NTT IndyCar Series Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "720",
+    "sku": "GL-720",
+    "name": "IndyCar",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/05/NICS_POS_FULL_COLOR.png",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/05/NICS_POS_FULL_COLOR.png"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/indycar/",
+    "greenlight_slug": "indycar",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:18"
+    ],
+    "greenlight_display_order": 2,
+    "greenlight_short_description": "1:18 IndyCar – 2021 NTT IndyCar Series Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "717",
+    "sku": "GL-717",
+    "name": "GMP",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/05/GMP-logo.png",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/05/GMP-logo.png"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/gmp/",
+    "greenlight_slug": "gmp",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:18"
+    ],
+    "greenlight_display_order": 3,
+    "greenlight_short_description": "1:18 GMP Ford Mustang LX – Vermillion Red Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "496",
+    "sku": "GL-496",
+    "name": "Bespoke Collection",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/bespoke-collection.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/bespoke-collection.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/bespoke-collection/",
+    "greenlight_slug": "bespoke-collection",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:12"
+    ],
+    "greenlight_display_order": 4,
+    "greenlight_short_description": "1:12 Bespoke Collection – Gone in Sixty Seconds (2000) – 1967 Ford Mustang “Eleanor” / The A-Team – 1983 GMC Vandura Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "495",
+    "sku": "GL-495",
+    "name": "GreenLight 1:43 Scale",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/03/1-43.png",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/03/1-43.png"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/greenlight-143-scale/",
+    "greenlight_slug": "greenlight-143-scale",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:43"
+    ],
+    "greenlight_display_order": 5,
+    "greenlight_short_description": "1:43 GreenLight Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "492",
+    "sku": "GL-492",
+    "name": "Kings of Crunch",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/kings-of-crunch.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/kings-of-crunch.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/kings-of-crunch-2/",
+    "greenlight_slug": "kings-of-crunch-2",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:43"
+    ],
+    "greenlight_display_order": 6,
+    "greenlight_short_description": "1:43 Kings of Crunch Series 4 Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "491",
+    "sku": "GL-491",
+    "name": "Hollywood",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/hollywood.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/hollywood.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/hollywood-3/",
+    "greenlight_slug": "hollywood-3",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:43"
+    ],
+    "greenlight_display_order": 7,
+    "greenlight_short_description": "1:43 Hollywood – Creed (2015) – Adonis Creed’s 1967 Ford Mustang Coupe – Matte Black Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "490",
+    "sku": "GL-490",
+    "name": "Jeep Wranglers",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/jeep-1.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/jeep-1.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/jeep-wranglers/",
+    "greenlight_slug": "jeep-wranglers",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:43"
+    ],
+    "greenlight_display_order": 8,
+    "greenlight_short_description": "1:43 Jeep Wranglers – 2018 Jeep Wrangler Unlimited Rubicon Recon with Off-Road Parts – Gobi Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "489",
+    "sku": "GL-489",
+    "name": "GreenLight 1:24 Scale",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/03/1-24.png",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/03/1-24.png"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/greenlight-124-scale/",
+    "greenlight_slug": "greenlight-124-scale",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:24"
+    ],
+    "greenlight_display_order": 9,
+    "greenlight_short_description": "1:24 GreenLight – 1957 Plymouth Belvedere – Desert Gold and Sand Dune White – Tulsa, Oklahoma “Tulsarama” 2007 Underground Vault Unearthing Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "486",
+    "sku": "GL-486",
+    "name": "Hitch and Tow Trailers",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/hitch-and-tow-trailers.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/hitch-and-tow-trailers.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/hitch-and-tow-trailers/",
+    "greenlight_slug": "hitch-and-tow-trailers",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:24"
+    ],
+    "greenlight_display_order": 10,
+    "greenlight_short_description": "1:24 Hitch and Tow Trailers Series 6 Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "483",
+    "sku": "GL-483",
+    "name": "Tokyo Torque",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/tokyo-torque.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/tokyo-torque.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/tokyo-torque/",
+    "greenlight_slug": "tokyo-torque",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:24"
+    ],
+    "greenlight_display_order": 11,
+    "greenlight_short_description": "1:24 Tokyo Torque – 1970 Datsun 240Z Gulf Oil Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "481",
+    "sku": "GL-481",
+    "name": "Running on Empty",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/running-on-empty.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/running-on-empty.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/running-on-empty-2/",
+    "greenlight_slug": "running-on-empty-2",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:24"
+    ],
+    "greenlight_display_order": 12,
+    "greenlight_short_description": "1:24 Running on Empty Series 2 Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "479",
+    "sku": "GL-479",
+    "name": "Hot Pursuit",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/hot-pursuit.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/hot-pursuit.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/hot-pursuit-2/",
+    "greenlight_slug": "hot-pursuit-2",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:24"
+    ],
+    "greenlight_display_order": 13,
+    "greenlight_short_description": "1:24 Hot Pursuit Series 4 Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "477",
+    "sku": "GL-477",
+    "name": "Hollywood",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/hollywood.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/hollywood.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/hollywood-2/",
+    "greenlight_slug": "hollywood-2",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:24"
+    ],
+    "greenlight_display_order": 14,
+    "greenlight_short_description": "1:24 Hollywood – 1967 Volkswagen Beetle w-Gizmo Figure – Gremlins (1984) Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "476",
+    "sku": "GL-476",
+    "name": "GreenLight 1:18 Scale",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/03/1-18.png",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/03/1-18.png"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/greenlight-118-scale/",
+    "greenlight_slug": "greenlight-118-scale",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:18"
+    ],
+    "greenlight_display_order": 15,
+    "greenlight_short_description": "1:18 GreenLight Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "473",
+    "sku": "GL-473",
+    "name": "Vintage Gas Pumps",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/vintage-gas-pumps.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/vintage-gas-pumps.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/vintage-gas-pumps/",
+    "greenlight_slug": "vintage-gas-pumps",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:18"
+    ],
+    "greenlight_display_order": 16,
+    "greenlight_short_description": "1:18 Vintage Gas Pumps Series 10 Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "470",
+    "sku": "GL-470",
+    "name": "Highway 61",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/highway-61.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/highway-61.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/highway-61/",
+    "greenlight_slug": "highway-61",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:18"
+    ],
+    "greenlight_display_order": 17,
+    "greenlight_short_description": "1:18 Highway 61 – The Texas Chain Saw Massacre (1974) – 1971 Chevrolet C-10 with Leatherface Figure Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "467",
+    "sku": "GL-467",
+    "name": "Artisan Collection",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/artisan-collection.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/artisan-collection.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/artisan-collection/",
+    "greenlight_slug": "artisan-collection",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:18"
+    ],
+    "greenlight_display_order": 18,
+    "greenlight_short_description": "1:18 Artisan Collection – Fast & Furious (2009) – Tego’s 1978 Pontiac Firebird Trans Am Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "464",
+    "sku": "GL-464",
+    "name": "First Responders",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/logo-coming-soon.png",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/logo-coming-soon.png"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/first-responders/",
+    "greenlight_slug": "first-responders",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:64"
+    ],
+    "greenlight_display_order": 19,
+    "greenlight_short_description": "1:64 First Responders Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  },
+  {
+    "detail_id": "462",
+    "sku": "GL-462",
+    "name": "Fire and Rescue",
+    "status": "Released",
+    "image": "https://www.greenlighttoys.com/wp-content/uploads/2021/04/fire-and-rescue.jpg",
+    "images": [
+      "https://www.greenlighttoys.com/wp-content/uploads/2021/04/fire-and-rescue.jpg"
+    ],
+    "greenlight_url": "https://www.greenlighttoys.com/product/fire-and-rescue/",
+    "greenlight_slug": "fire-and-rescue",
+    "greenlight_type": "simple",
+    "greenlight_categories": [
+      "1:64"
+    ],
+    "greenlight_display_order": 20,
+    "greenlight_short_description": "1:64 Fire and Rescue Series 1 Scroll down to view the Image Gallery",
+    "greenlight_in_stock": true,
+    "greenlight_on_backorder": false
+  }
+]
