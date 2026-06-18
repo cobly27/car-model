@@ -15,6 +15,14 @@ SUMMARY_PATHS = {
     "spark64": BASE_DIR / "spark64_update_summary.json",
     "inno": BASE_DIR / "inno_update_summary.json",
     "poprace": BASE_DIR / "poprace_update_summary.json",
+<<<<<<< Updated upstream
+=======
+    "gcd": BASE_DIR / "gcd_update_summary.json",
+    "dct": BASE_DIR / "dct_update_summary.json",
+    "tarmacworks": BASE_DIR / "tarmacworks_update_summary.json",
+    "greenlight": BASE_DIR / "greenlight_update_summary.json",
+    "trendshobby": BASE_DIR / "trendshobby_update_summary.json",
+>>>>>>> Stashed changes
 }
 
 TOPSPEED_THUMB_DIR = BASE_DIR / "static" / "topspeed_thumb_cache"

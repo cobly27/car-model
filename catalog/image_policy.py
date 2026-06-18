@@ -32,6 +32,14 @@ IMAGE_POLICIES = {
         },
     },
     "poprace": {"maxImages": 4},
+<<<<<<< Updated upstream
+=======
+    "gcd": {"maxImages": 4},
+    "dct": {"maxImages": 4},
+    "tarmacworks": {"maxImages": 4},
+    "greenlight": {"maxImages": 4},
+    "trendshobby": {"maxImages": 4},
+>>>>>>> Stashed changes
 }
 
 

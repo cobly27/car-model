@@ -40,6 +40,14 @@ const categoryScopedFilters = {
     "spark64": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "inno": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "poprace": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+<<<<<<< Updated upstream
+=======
+    "gcd": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+    "dct": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+    "tarmacworks": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+    "greenlight": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+    "trendshobby": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+>>>>>>> Stashed changes
     "ar": new Set(["", "fav"]),
 };
 
@@ -105,6 +113,18 @@ function productUrl(product) {
     if (product.categoryId === "spark" || product.categoryId === "spark64") return `https://www.sparkmodel.com/en/products/${detailId}`;
     if (product.categoryId === "inno") return product.inno_url || "https://www.inno-models.com/our-products/?jsf=jet-engine:shop-loop&tax=pa_scale:1-64";
     if (product.categoryId === "poprace") return product.poprace_source_url || "https://www.xcartoys.com/S_series";
+<<<<<<< Updated upstream
+=======
+    if (product.categoryId === "gcd") return product.gcd_url || "https://www.gcd-models.com/category/products/gcd/";
+    if (product.categoryId === "dct") return product.dct_url || "https://www.gcd-models.com/category/products/dct/";
+    if (product.categoryId === "tarmacworks") {
+        if (product.tarmacworks_url) return product.tarmacworks_url;
+        if (product.tarmacworks_handle) return `https://www.tarmacworks.com/products/${product.tarmacworks_handle}`;
+        return "https://www.tarmacworks.com/collections/all";
+    }
+    if (product.categoryId === "greenlight") return product.greenlight_url || "https://www.greenlighttoys.com/shop/";
+    if (product.categoryId === "trendshobby") return product.trendshobby_url || "https://www.instagram.com/trends.hobby/";
+>>>>>>> Stashed changes
     return `https://minigt.tsm-models.com/index.php?action=product-detail&id=${detailId}`;
 }
 

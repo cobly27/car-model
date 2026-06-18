@@ -119,6 +119,33 @@ def update_inno():
 def update_poprace():
     return jsonify(update_manager.start("poprace"))
 
+<<<<<<< Updated upstream
+=======
+@app.route("/api/update-gcd", methods=["GET", "POST"])
+def update_gcd():
+    return jsonify(update_manager.start("gcd"))
+
+
+@app.route("/api/update-dct", methods=["GET", "POST"])
+def update_dct():
+    return jsonify(update_manager.start("dct"))
+
+
+@app.route("/api/update-tarmacworks", methods=["GET", "POST"])
+def update_tarmacworks():
+    return jsonify(update_manager.start("tarmacworks"))
+
+
+@app.route("/api/update-greenlight", methods=["GET", "POST"])
+def update_greenlight():
+    return jsonify(update_manager.start("greenlight"))
+
+
+@app.route("/api/update-trendshobby", methods=["GET", "POST"])
+def update_trendshobby():
+    return jsonify(update_manager.start("trendshobby"))
+
+>>>>>>> Stashed changes
 
 @app.route("/api/status")
 def check_status():

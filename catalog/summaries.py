@@ -146,3 +146,116 @@ def format_poprace_update_summary():
         f"最终 POP RACE 数量：{summary.get('final_poprace_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
     ]
     return "\n".join(lines)
+<<<<<<< Updated upstream
+=======
+
+
+def format_gcd_update_summary():
+    summary = load_update_summary(SUMMARY_PATHS["gcd"])
+    if not summary:
+        return "✅ 全部更新完成！请刷新页面查看。"
+
+    lines = [
+        "✅ GCD 产品更新完成！请刷新页面查看最新数据。",
+        f"官网分类：GCD（文章分类 ID {summary.get('category_id', 36)}）",
+        f"官网分页：{summary.get('page_count', 0)} 页",
+        f"官网抓取：{summary.get('fetched_count', 0)} 个",
+        f"原 GCD 数量：{summary.get('original_gcd_count', 0)} 个",
+        f"新增：{summary.get('added_count', 0)} 个，更新：{summary.get('updated_count', 0)} 个，未变：{summary.get('unchanged_count', 0)} 个",
+        f"官网未返回但已保留：{summary.get('preserved_count', 0)} 个",
+        f"详情图成功：{summary.get('detail_success_count', 0)} 个，失败保留列表图：{summary.get('detail_failed_count', 0)} 个",
+        f"每个 GCD 产品最多保留：{summary.get('max_images_per_product', 4)} 张图",
+        f"最终 GCD 数量：{summary.get('final_gcd_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
+    ]
+    if summary.get("duplicate_count", 0):
+        lines.insert(7, f"跳过重复官网产品：{summary.get('duplicate_count', 0)} 个")
+    return "\n".join(lines)
+
+
+def format_dct_update_summary():
+    summary = load_update_summary(SUMMARY_PATHS["dct"])
+    if not summary:
+        return "✅ 全部更新完成！请刷新页面查看。"
+
+    lines = [
+        "✅ DCT 产品更新完成！请刷新页面查看最新数据。",
+        f"官网分类：DCT（文章分类 ID {summary.get('category_id', 37)}）",
+        f"官网分页：{summary.get('page_count', 0)} 页",
+        f"官网抓取：{summary.get('fetched_count', 0)} 个",
+        f"原 DCT 数量：{summary.get('original_dct_count', 0)} 个",
+        f"新增：{summary.get('added_count', 0)} 个，更新：{summary.get('updated_count', 0)} 个，未变：{summary.get('unchanged_count', 0)} 个",
+        f"官网未返回但已保留：{summary.get('preserved_count', 0)} 个",
+        f"详情图成功：{summary.get('detail_success_count', 0)} 个，失败保留列表图：{summary.get('detail_failed_count', 0)} 个",
+        f"每个 DCT 产品最多保留：{summary.get('max_images_per_product', 4)} 张图",
+        f"最终 DCT 数量：{summary.get('final_dct_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
+    ]
+    if summary.get("duplicate_count", 0):
+        lines.insert(7, f"跳过重复官网产品：{summary.get('duplicate_count', 0)} 个")
+    return "\n".join(lines)
+
+
+def format_tarmacworks_update_summary():
+    summary = load_update_summary(SUMMARY_PATHS["tarmacworks"])
+    if not summary:
+        return "✅ 全部更新完成！请刷新页面查看。"
+
+    lines = [
+        "✅ TARMAC WORKS 产品更新完成！请刷新页面查看最新数据。",
+        f"官网接口：products.json，小范围抓取上限：{summary.get('max_products', 20)} 个",
+        f"官网抓取：{summary.get('fetched_count', 0)} 个",
+        f"原 TARMAC WORKS 数量：{summary.get('original_tarmacworks_count', 0)} 个",
+        f"新增：{summary.get('added_count', 0)} 个，更新：{summary.get('updated_count', 0)} 个，未变：{summary.get('unchanged_count', 0)} 个",
+        f"官网未返回但已保留：{summary.get('preserved_count', 0)} 个",
+        f"图片成功：{summary.get('image_success_count', 0)} 个，缺图：{summary.get('image_failed_count', 0)} 个",
+        f"每个 TARMAC WORKS 产品最多保留：{summary.get('max_images_per_product', 4)} 张图",
+        f"最终 TARMAC WORKS 数量：{summary.get('final_tarmacworks_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
+    ]
+    if summary.get("duplicate_count", 0):
+        lines.insert(6, f"跳过重复官网产品：{summary.get('duplicate_count', 0)} 个")
+    return "\n".join(lines)
+
+
+def format_greenlight_update_summary():
+    summary = load_update_summary(SUMMARY_PATHS["greenlight"])
+    if not summary:
+        return "✅ 全部更新完成！请刷新页面查看。"
+
+    lines = [
+        "✅ GreenLight 产品更新完成！请刷新页面查看最新数据。",
+        f"官网接口总数：{summary.get('api_total_count', 0)} 个，分页：{summary.get('page_count', 0)} 页",
+        f"小范围抓取上限：{summary.get('max_products', 20)} 个，实际抓取：{summary.get('fetched_count', 0)} 个",
+        f"原 GreenLight 数量：{summary.get('original_greenlight_count', 0)} 个",
+        f"新增：{summary.get('added_count', 0)} 个，更新：{summary.get('updated_count', 0)} 个，未变：{summary.get('unchanged_count', 0)} 个",
+        f"官网未返回但已保留：{summary.get('preserved_count', 0)} 个",
+        f"图片成功：{summary.get('image_success_count', 0)} 个，缺图：{summary.get('image_failed_count', 0)} 个",
+        f"每个 GreenLight 产品最多保留：{summary.get('max_images_per_product', 4)} 张图",
+        f"最终 GreenLight 数量：{summary.get('final_greenlight_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
+    ]
+    if summary.get("duplicate_count", 0):
+        lines.insert(6, f"跳过重复官网产品：{summary.get('duplicate_count', 0)} 个")
+    return "\n".join(lines)
+
+
+def format_trendshobby_update_summary():
+    summary = load_update_summary(SUMMARY_PATHS["trendshobby"])
+    if not summary:
+        return "✅ 全部更新完成！请刷新页面查看。"
+
+    source_text = "，".join(
+        f"{source.get('name', source.get('id', '渠道'))} {source.get('count', 0)} 个"
+        for source in summary.get("sources", [])
+    )
+    lines = [
+        "✅ TH / Trends Hobby 产品更新完成！请刷新页面查看最新数据。",
+        f"渠道来源：{source_text or summary.get('source_count', 0)} 个渠道",
+        f"渠道原始抓取：{summary.get('raw_count', 0)} 个，去重后：{summary.get('fetched_count', 0)} 个",
+        f"原 TH 数量：{summary.get('original_trendshobby_count', 0)} 个",
+        f"新增：{summary.get('added_count', 0)} 个，更新：{summary.get('updated_count', 0)} 个，未变：{summary.get('unchanged_count', 0)} 个",
+        f"官网未返回但已保留：{summary.get('preserved_count', 0)} 个",
+        f"重复合并：{summary.get('duplicate_count', 0)} 个",
+        f"图片成功：{summary.get('image_success_count', 0)} 个，缺图：{summary.get('image_failed_count', 0)} 个",
+        f"每个 TH 产品最多保留：{summary.get('max_images_per_product', 4)} 张图",
+        f"最终 TH 数量：{summary.get('final_trendshobby_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
+    ]
+    return "\n".join(lines)
+>>>>>>> Stashed changes

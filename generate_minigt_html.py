@@ -108,6 +108,36 @@ def product_url(detail_id, category_id='mini-gt'):
         return 'https://www.inno-models.com/our-products/?jsf=jet-engine:shop-loop&tax=pa_scale:1-64'
     if category_id == 'poprace':
         return 'https://www.xcartoys.com/S_series'
+<<<<<<< Updated upstream
+=======
+    if category_id == 'gcd':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'gcd'), None)
+        if product and product.get('gcd_url'):
+            return product.get('gcd_url')
+        return 'https://www.gcd-models.com/category/products/gcd/'
+    if category_id == 'dct':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'dct'), None)
+        if product and product.get('dct_url'):
+            return product.get('dct_url')
+        return 'https://www.gcd-models.com/category/products/dct/'
+    if category_id == 'tarmacworks':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'tarmacworks'), None)
+        if product and product.get('tarmacworks_url'):
+            return product.get('tarmacworks_url')
+        if product and product.get('tarmacworks_handle'):
+            return f"https://www.tarmacworks.com/products/{product.get('tarmacworks_handle')}"
+        return 'https://www.tarmacworks.com/collections/all'
+    if category_id == 'greenlight':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'greenlight'), None)
+        if product and product.get('greenlight_url'):
+            return product.get('greenlight_url')
+        return 'https://www.greenlighttoys.com/shop/'
+    if category_id == 'trendshobby':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'trendshobby'), None)
+        if product and product.get('trendshobby_url'):
+            return product.get('trendshobby_url')
+        return 'https://www.instagram.com/trends.hobby/'
+>>>>>>> Stashed changes
     return f'https://minigt.tsm-models.com/index.php?action=product-detail&id={detail_id}'
 
 def preview_image_url(image, category_id='mini-gt'):
@@ -1109,9 +1139,15 @@ body.dark .img-lazy {
         <select class="quick-filter active category-select" id="categoryDropdownBtn" data-filter="" onchange="selectCategoryFromDropdown(this.value)" aria-label="选择分类">
             {category_options_html}
         </select>
+<<<<<<< Updated upstream
         <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
         <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
         <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
+=======
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
+>>>>>>> Stashed changes
         <button class="quick-filter fav-only" data-filter="fav" onclick="setQuickFilter(this)">⭐ 收藏</button>
         </div>
     </div>
@@ -1130,6 +1166,14 @@ body.dark .img-lazy {
             <button class="update-btn" data-scope="spark" id="updateSparkBtn" onclick="triggerUpdate('spark')">🔄 更新 SPARK 产品</button>
             <button class="update-btn" data-scope="spark64" id="updateSpark64Btn" onclick="triggerUpdate('spark64')">🔄 更新 SPARK 1:64 产品</button>
             <button class="update-btn" data-scope="inno" id="updateInnoBtn" onclick="triggerUpdate('inno')">🔄 更新 INNO 产品</button>
+<<<<<<< Updated upstream
+=======
+            <button class="update-btn" data-scope="gcd" id="updateGcdBtn" onclick="triggerUpdate('gcd')">🔄 更新 GCD 产品</button>
+            <button class="update-btn" data-scope="dct" id="updateDctBtn" onclick="triggerUpdate('dct')">🔄 更新 DCT 产品</button>
+            <button class="update-btn" data-scope="tarmacworks" id="updateTarmacworksBtn" onclick="triggerUpdate('tarmacworks')">🔄 更新 TARMAC WORKS 产品</button>
+            <button class="update-btn" data-scope="greenlight" id="updateGreenlightBtn" onclick="triggerUpdate('greenlight')">🔄 更新 GreenLight 产品</button>
+            <button class="update-btn" data-scope="trendshobby" id="updateTrendsHobbyBtn" onclick="triggerUpdate('trendshobby')">🔄 更新 TH 产品</button>
+>>>>>>> Stashed changes
         </div>
     </div>
 </div>
@@ -1168,14 +1212,12 @@ body.dark .img-lazy {
             </tr>
         </thead>
         <tbody>
-            {table_rows}
         </tbody>
     </table>
 </div>
 
 <!-- Cards View -->
 <div class="cards-wrap" id="cardsView">
-    {card_items}
 </div>
 
 <!-- Pagination -->
@@ -1262,8 +1304,118 @@ const categoryScopedFilters = {
     'spark': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'spark64': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'inno': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+<<<<<<< Updated upstream
     'poprace': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav'])
+=======
+    'poprace': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'gcd': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'dct': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'tarmacworks': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'greenlight': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'trendshobby': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav'])
+>>>>>>> Stashed changes
 };
+const productByIndex = new Map(productsData.map(product => [String(product.index), product]));
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function escapeAttr(value) {
+    return escapeHtml(value);
+}
+
+function productImageData(product) {
+    return escapeAttr(JSON.stringify(product.images || []));
+}
+
+function productStatusClass(status) {
+    const classes = {
+        'Pre-Order': 'status-preorder',
+        'Released': 'status-released',
+        'Sold Out': 'status-soldout'
+    };
+    return classes[status] || '';
+}
+
+function renderTableProduct(product) {
+    const images = product.images || [placeholderImage];
+    const previewImages = product.previewImages || images.slice(0, product.categoryId === 'topspeed' ? 1 : 3);
+    const remainingImageCount = Math.max(0, (product.imageCount || images.length) - previewImages.length);
+    const imageHtml = previewImages.map((img, idx) => `
+        <img src="${escapeAttr(img)}" data-src="${escapeAttr(img)}" alt="${escapeAttr(product.name)}" class="thumb-img img-lazy" loading="lazy" data-modal-index="${idx}" onerror="handleImageError(this, ${idx})">
+    `).join('');
+    const extraHtml = remainingImageCount > 0
+        ? `<span class="img-count" data-modal-index="0">+${remainingImageCount}</span>`
+        : '';
+
+    return `
+        <tr data-sku="${escapeAttr(product.sku)}" data-name="${escapeAttr(product.name)}" data-status="${escapeAttr(product.status)}" data-index="${escapeAttr(product.index)}" data-category="${escapeAttr(product.categoryId)}" data-images="${productImageData(product)}">
+            <td class="num">${escapeHtml(product.index)}</td>
+            <td class="sku" title="点击复制编号" data-copy-sku="${escapeAttr(product.sku)}">${escapeHtml(product.sku)}</td>
+            <td class="name-cell">
+                <a href="${escapeAttr(product.detailUrl)}" target="_blank" rel="noopener" title="在官网查看详情">${escapeHtml(product.name)}</a>
+                <button class="copy-name-btn" type="button" data-copy-name="${escapeAttr(product.name)}" title="复制名称">📋</button>
+            </td>
+            <td class="status-cell"><span class="badge ${productStatusClass(product.status)}">${escapeHtml(product.status)}</span></td>
+            <td class="img-cell">
+                <div class="img-triplet" data-modal-index="0">
+                    ${imageHtml}
+                    ${extraHtml}
+                </div>
+            </td>
+            <td class="fav-cell">
+                <button class="fav-btn" type="button" data-sku="${escapeAttr(product.sku)}" title="收藏">☆</button>
+            </td>
+        </tr>
+    `;
+}
+
+function renderCardProduct(product) {
+    const images = product.images || [placeholderImage];
+    const cover = product.coverImage || product.previewImages?.[0] || images[0] || placeholderImage;
+    const noImageClass = cover === placeholderImage ? 'is-placeholder' : '';
+
+    return `
+        <div class="card-item" data-sku="${escapeAttr(product.sku)}" data-name="${escapeAttr(product.name)}" data-status="${escapeAttr(product.status)}" data-index="${escapeAttr(product.index)}" data-category="${escapeAttr(product.categoryId)}" data-images="${productImageData(product)}">
+            <div class="card-img ${noImageClass}" data-modal-index="0">
+                <img src="${escapeAttr(cover)}" data-src="${escapeAttr(cover)}" alt="${escapeAttr(product.name)}" loading="lazy" onload="this.classList.add('loaded')" onerror="handleImageError(this, 0)">
+                <div class="card-img-overlay">
+                    <span class="card-img-count">${escapeHtml(product.imageCount || images.length)} 图</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="card-sku" data-copy-sku="${escapeAttr(product.sku)}">${escapeHtml(product.sku)}</div>
+                <a href="${escapeAttr(product.detailUrl)}" target="_blank" rel="noopener" class="card-name" title="在官网查看详情">${escapeHtml(product.name)}</a>
+                <div class="card-footer">
+                    <span class="badge ${productStatusClass(product.status)}">${escapeHtml(product.status)}</span>
+                    <button class="fav-btn" type="button" data-sku="${escapeAttr(product.sku)}" title="收藏">☆</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderCurrentPageProducts(products) {
+    const tableBody = document.querySelector('#tableView tbody');
+    const cardsView = document.getElementById('cardsView');
+    if (currentView === 'table') {
+        tableBody.innerHTML = products.map(renderTableProduct).join('');
+        cardsView.innerHTML = '';
+    } else {
+        cardsView.innerHTML = products.map(renderCardProduct).join('');
+        tableBody.innerHTML = '';
+    }
+    updateFavoriteButtons();
+    return currentView === 'table'
+        ? Array.from(tableBody.querySelectorAll('tr'))
+        : Array.from(cardsView.querySelectorAll('.card-item'));
+}
 
 function readElementImages(element) {
     if (!element || !element.dataset.images) return [];
@@ -1383,15 +1535,18 @@ function preloadPageCoversInChunks(items) {
     runChunk();
 }
 
-function preloadUpcomingPageCovers(visibleRows, endIndex) {
+function preloadUpcomingPageCovers(visibleProducts, endIndex) {
     if (currentView !== 'cards') return;
     if (isHeavyImageCategory(currentCategory)) return;
     if (document.getElementById('search')?.value.trim()) return;
     const nextPageStart = endIndex;
-    const nextPageEnd = Math.min(nextPageStart + pageSize, visibleRows.length);
+    const nextPageEnd = Math.min(nextPageStart + pageSize, visibleProducts.length);
     if (nextPageStart >= nextPageEnd) return;
 
-    preloadPageCoversInChunks(visibleRows.slice(nextPageStart, nextPageEnd));
+    visibleProducts.slice(nextPageStart, nextPageEnd).forEach(product => {
+        const src = product.coverImage || product.previewImages?.[0];
+        if (src) preloadImage(src, 'auto');
+    });
 }
 
 function preloadModalNeighbors() {
@@ -1522,6 +1677,9 @@ function switchCategory(categoryId) {
 
 // 获取当前分类的产品数据
 function getCategoryProducts() {
+    if (currentFilter === 'fav') {
+        return productsData;
+    }
     return productsData.filter(p => {
         return p.categoryId === currentCategory;
     });
@@ -1559,8 +1717,14 @@ function getVisibleProducts() {
     const search = document.getElementById('search').value.toLowerCase().trim();
     if (search) {
         filtered = filtered.filter(p => {
-            return p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
+            const name = String(p.name || '').toLowerCase();
+            const sku = String(p.sku || '').toLowerCase();
+            return name.includes(search) || sku.includes(search);
         });
+    }
+
+    if (sortState.col) {
+        filtered = [...filtered].sort((a, b) => compareProducts(a, b, sortState.col, sortState.dir));
     }
     
     return filtered;
@@ -1608,6 +1772,41 @@ function setupControlEventListeners() {
             return;
         }
 
+        const copySku = target.closest('[data-copy-sku]');
+        if (copySku) {
+            event.preventDefault();
+            event.stopPropagation();
+            copySKU(copySku.dataset.copySku, copySku);
+            return;
+        }
+
+        const copyName = target.closest('[data-copy-name]');
+        if (copyName) {
+            event.preventDefault();
+            event.stopPropagation();
+            copyText(copyName.dataset.copyName, copyName);
+            return;
+        }
+
+        const favoriteButton = target.closest('.fav-btn[data-sku]');
+        if (favoriteButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            toggleFavorite(favoriteButton.dataset.sku, favoriteButton);
+            return;
+        }
+
+        const modalTrigger = target.closest('[data-modal-index]');
+        if (modalTrigger) {
+            const productElement = modalTrigger.closest('tr') || modalTrigger.closest('.card-item');
+            if (productElement) {
+                event.preventDefault();
+                event.stopPropagation();
+                openMultiModalFromElement(productElement, parseInt(modalTrigger.dataset.modalIndex, 10) || 0);
+                return;
+            }
+        }
+
         const filterButton = target.closest('button.quick-filter[data-filter]');
         if (filterButton) {
             event.preventDefault();
@@ -1641,7 +1840,16 @@ function setupControlEventListeners() {
                 updateTopSpeedBtn: 'topspeed',
                 updateSparkBtn: 'spark',
                 updateSpark64Btn: 'spark64',
+<<<<<<< Updated upstream
                 updateInnoBtn: 'inno'
+=======
+                updateInnoBtn: 'inno',
+                updateGcdBtn: 'gcd',
+                updateDctBtn: 'dct',
+                updateTarmacworksBtn: 'tarmacworks',
+                updateGreenlightBtn: 'greenlight',
+                updateTrendsHobbyBtn: 'trendshobby'
+>>>>>>> Stashed changes
             };
             const updateType = updateTypeById[updateButton.id];
             if (updateType) triggerUpdate(updateType);
@@ -1765,45 +1973,23 @@ function clearSearch() {
 // Filter function with pagination
 function applyFilter() {
     syncSearchClearButton();
-    const q = document.getElementById('search').value.toLowerCase();
-    const allRows = currentView === 'table' 
-        ? document.querySelectorAll('#tableView tbody tr')
-        : document.querySelectorAll('#cardsView .card-item');
-    
-    let count = 0;
+    const visibleProducts = getVisibleProducts();
     const counts = { 'Pre-Order':0, 'Released':0, 'Sold Out':0 };
-    const visibleRows = [];
-    
-    // First pass: mark all matching rows and collect them
-    allRows.forEach(row => {
-        const sku = row.dataset.sku?.toLowerCase() || '';
-        const name = row.dataset.name?.toLowerCase() || '';
-        const status = row.dataset.status || '';
-        const category = row.dataset.category || '';
-        const isFav = favorites.has(row.dataset.sku);
-        
-        const matchSearch = !q || sku.includes(q) || name.includes(q);
-        const matchStatus = !currentFilter ? true : (currentFilter === 'fav' ? isFav : status === currentFilter);
-        // 收藏视图显示所有分类的收藏，不按分类过滤
-        const matchCategory = currentFilter === 'fav' ? true : category === currentCategory;
-        
-        const visible = matchSearch && matchStatus && matchCategory;
-        
-        if (visible) {
-            visibleRows.push(row);
-            count++;
-            if (counts[status] !== undefined) counts[status]++;
+
+    visibleProducts.forEach(product => {
+        if (counts[product.status] !== undefined) {
+            counts[product.status]++;
         }
     });
     
     // Apply pagination
-    updatePagination(visibleRows);
+    updatePagination(visibleProducts);
     
     // Update stats
     const stats = document.getElementById('statsGroup');
     const totalForCategory = categoryStats[currentCategory]?.total || 0;
     stats.innerHTML = `
-        <span class="stat-badge">显示 ${count} / 共 ${totalForCategory}</span>
+        <span class="stat-badge">显示 ${visibleProducts.length} / 共 ${totalForCategory}</span>
         <span class="stat-badge released">✅ ${counts['Released']}</span>
         <span class="stat-badge preorder">📦 ${counts['Pre-Order']}</span>
         <span class="stat-badge soldout">❌ ${counts['Sold Out']}</span>
@@ -1811,8 +1997,8 @@ function applyFilter() {
 }
 
 // Update pagination UI
-function updatePagination(visibleRows) {
-    const totalItems = visibleRows.length;
+function updatePagination(visibleProducts) {
+    const totalItems = visibleProducts.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     
     // Keep current page within valid range
@@ -1822,20 +2008,11 @@ function updatePagination(visibleRows) {
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = Math.min(startIndex + pageSize, totalItems);
     
-    // Show/hide rows based on pagination
-    const allRows = currentView === 'table' 
-        ? document.querySelectorAll('#tableView tbody tr')
-        : document.querySelectorAll('#cardsView .card-item');
-    
-    allRows.forEach(row => row.classList.add('hidden'));
-    
-    for (let i = startIndex; i < endIndex; i++) {
-        visibleRows[i].classList.remove('hidden');
-    }
-    const currentPageRows = visibleRows.slice(startIndex, endIndex);
-    activateVisibleImages(currentPageRows);
-    preloadPageCovers(currentPageRows);
-    preloadUpcomingPageCovers(visibleRows, endIndex);
+    const currentPageProducts = visibleProducts.slice(startIndex, endIndex);
+    const currentPageElements = renderCurrentPageProducts(currentPageProducts);
+    activateVisibleImages(currentPageElements);
+    preloadPageCovers(currentPageElements);
+    preloadUpcomingPageCovers(visibleProducts, endIndex);
     
     syncPaginationControls(totalPages);
     
@@ -1932,7 +2109,7 @@ function goToNextPage() {
 
 // Go to last page
 function goToLastPage() {
-    goToPage(totalPages);
+    goToPage(window.totalPages || 1);
 }
 
 // Change page size
@@ -1946,36 +2123,28 @@ function changePageSize(size) {
 // Sort function
 function sortTable(col, dir) {
     if (currentView !== 'table') return;
-    const tbody = document.querySelector('#tableView tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    
-    rows.sort((a, b) => {
-        let va, vb;
-        if (col === 'num') {
-            va = parseInt(a.querySelector('.num').textContent);
-            vb = parseInt(b.querySelector('.num').textContent);
-            return (va - vb) * dir;
-        }
-        if (col === 'sku') {
-            va = (a.dataset.sku || '').toLowerCase();
-            vb = (b.dataset.sku || '').toLowerCase();
-            return va.localeCompare(vb) * dir;
-        }
-        if (col === 'name') {
-            va = (a.dataset.name || '').toLowerCase();
-            vb = (b.dataset.name || '').toLowerCase();
-            return va.localeCompare(vb) * dir;
-        }
-        if (col === 'status') {
-            const order = { 'Pre-Order':0, 'Released':1, 'Sold Out':2 };
-            va = order[a.dataset.status] || 0;
-            vb = order[b.dataset.status] || 0;
-            return (va - vb) * dir;
-        }
-        return 0;
-    });
-    
-    rows.forEach(row => tbody.appendChild(row));
+    sortState = { col, dir };
+    currentPage = 1;
+    applyFilter();
+}
+
+function compareProducts(a, b, col, dir) {
+    let va;
+    let vb;
+    if (col === 'num') {
+        va = Number(a.index) || 0;
+        vb = Number(b.index) || 0;
+        return (va - vb) * dir;
+    }
+    if (col === 'status') {
+        const order = { 'Pre-Order':0, 'Released':1, 'Sold Out':2 };
+        va = order[a.status] ?? 99;
+        vb = order[b.status] ?? 99;
+        return (va - vb) * dir;
+    }
+    va = String(a[col] || '').toLowerCase();
+    vb = String(b[col] || '').toLowerCase();
+    return va.localeCompare(vb) * dir;
 }
 
 // 从 DOM 元素直接读取数据并打开图片（最可靠的方式）
@@ -2239,6 +2408,44 @@ const updateButtons = {
         label: '🔄 更新 INNO 产品',
         runningText: '⏳ INNO 更新中...',
         startText: '🚀 INNO 更新已开始，请耐心等待...'
+<<<<<<< Updated upstream
+=======
+    },
+    gcd: {
+        buttonId: 'updateGcdBtn',
+        endpoint: '/api/update-gcd',
+        label: '🔄 更新 GCD 产品',
+        runningText: '⏳ GCD 更新中...',
+        startText: '🚀 GCD 更新已开始，请耐心等待...'
+    },
+    dct: {
+        buttonId: 'updateDctBtn',
+        endpoint: '/api/update-dct',
+        label: '🔄 更新 DCT 产品',
+        runningText: '⏳ DCT 更新中...',
+        startText: '🚀 DCT 更新已开始，请耐心等待...'
+    },
+    tarmacworks: {
+        buttonId: 'updateTarmacworksBtn',
+        endpoint: '/api/update-tarmacworks',
+        label: '🔄 更新 TARMAC WORKS 产品',
+        runningText: '⏳ TARMAC WORKS 更新中...',
+        startText: '🚀 TARMAC WORKS 更新已开始，请耐心等待...'
+    },
+    greenlight: {
+        buttonId: 'updateGreenlightBtn',
+        endpoint: '/api/update-greenlight',
+        label: '🔄 更新 GreenLight 产品',
+        runningText: '⏳ GreenLight 更新中...',
+        startText: '🚀 GreenLight 更新已开始，请耐心等待...'
+    },
+    trendshobby: {
+        buttonId: 'updateTrendsHobbyBtn',
+        endpoint: '/api/update-trendshobby',
+        label: '🔄 更新 TH 产品',
+        runningText: '⏳ TH 更新中...',
+        startText: '🚀 TH 更新已开始，请耐心等待...'
+>>>>>>> Stashed changes
     }
 };
 
@@ -2409,12 +2616,21 @@ for i, p in enumerate(products):
         if p in cat_prods:
             cat_id = c_id
             break
+    images = get_images(p)
+    preview_limit = 1 if cat_id == 'topspeed' else 3
+    modal_images = [modal_image_url(img, cat_id) for img in images]
+    preview_images = [preview_image_url(img, cat_id) for img in images[:preview_limit]]
     products_list.append({
         'index': i + 1,
-        'name': p['name'],
-        'sku': p['sku'],
+        'name': p.get('name', ''),
+        'sku': p.get('sku', ''),
+        'status': p.get('status', ''),
         'categoryId': cat_id,
-        'images': [modal_image_url(img, cat_id) for img in get_images(p)]
+        'detailUrl': product_url(p.get('detail_id', ''), cat_id),
+        'images': modal_images,
+        'previewImages': preview_images,
+        'coverImage': preview_images[0] if preview_images else modal_images[0],
+        'imageCount': len(images)
     })
 products_json_str = json.dumps(products_list, ensure_ascii=False)
 
@@ -2424,7 +2640,7 @@ html = html.replace('{count_released}', str(count_released))
 html = html.replace('{count_preorder}', str(count_preorder))
 html = html.replace('{count_soldout}', str(count_soldout))
 html = html.replace('{category_tabs_html}', category_tabs_html)
-html = html.replace('{category_options_html}', category_options_html)
+html = html.replace('{category_options_html}', category_options_html.strip())
 html = html.replace('{table_rows}', table_rows)
 html = html.replace('{card_items}', card_items)
 

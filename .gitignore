@@ -33,4 +33,17 @@ static/inno_image_cache/
 poprace_products_api.json
 poprace_update_summary.json
 static/poprace_image_cache/
+<<<<<<< Updated upstream
+=======
+gcd_products_api.json
+gcd_update_summary.json
+dct_products_api.json
+dct_update_summary.json
+tarmacworks_products_api.json
+tarmacworks_update_summary.json
+greenlight_products_api.json
+greenlight_update_summary.json
+trendshobby_products_api.json
+trendshobby_update_summary.json
+>>>>>>> Stashed changes
 update_history.json

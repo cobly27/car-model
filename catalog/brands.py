@@ -3,6 +3,12 @@
 from .config import SUMMARY_PATHS
 from .summaries import (
     format_ar_update_summary,
+<<<<<<< Updated upstream
+=======
+    format_dct_update_summary,
+    format_gcd_update_summary,
+    format_greenlight_update_summary,
+>>>>>>> Stashed changes
     format_inno_update_summary,
     format_minigt_update_summary,
     format_poprace_update_summary,
@@ -142,6 +148,99 @@ BRANDS = [
             ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
         ],
     },
+<<<<<<< Updated upstream
+=======
+    {
+        "id": "gcd",
+        "name": "GCD产品",
+        "category_id": "gcd",
+        "endpoint": "/api/update-gcd",
+        "button_label": "🔄 更新 GCD 产品",
+        "running_label": "⏳ GCD 更新中...",
+        "started_message": "🚀 GCD 更新已开始，请耐心等待...",
+        "start_log": "开始更新 GCD 产品...",
+        "summary_path": SUMMARY_PATHS["gcd"],
+        "summary": format_gcd_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 GCD 产品和详情图...", "抓取 GCD 产品", "scrape_gcd_api.py"),
+            ("3/4 合并 GCD 产品清单...", "合并 GCD 产品清单", "update_gcd_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "dct",
+        "name": "DCT产品",
+        "category_id": "dct",
+        "endpoint": "/api/update-dct",
+        "button_label": "🔄 更新 DCT 产品",
+        "running_label": "⏳ DCT 更新中...",
+        "started_message": "🚀 DCT 更新已开始，请耐心等待...",
+        "start_log": "开始更新 DCT 产品...",
+        "summary_path": SUMMARY_PATHS["dct"],
+        "summary": format_dct_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 DCT 产品和详情图...", "抓取 DCT 产品", "scrape_dct_api.py"),
+            ("3/4 合并 DCT 产品清单...", "合并 DCT 产品清单", "update_dct_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "tarmacworks",
+        "name": "TARMAC WORKS产品",
+        "category_id": "tarmacworks",
+        "endpoint": "/api/update-tarmacworks",
+        "button_label": "🔄 更新 TARMAC WORKS 产品",
+        "running_label": "⏳ TARMAC WORKS 更新中...",
+        "started_message": "🚀 TARMAC WORKS 更新已开始，请耐心等待...",
+        "start_log": "开始更新 TARMAC WORKS 产品...",
+        "summary_path": SUMMARY_PATHS["tarmacworks"],
+        "summary": format_tarmacworks_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 TARMAC WORKS 产品样本...", "抓取 TARMAC WORKS 产品", "scrape_tarmacworks_api.py"),
+            ("3/4 合并 TARMAC WORKS 产品清单...", "合并 TARMAC WORKS 产品清单", "update_tarmacworks_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "greenlight",
+        "name": "GreenLight产品",
+        "category_id": "greenlight",
+        "endpoint": "/api/update-greenlight",
+        "button_label": "🔄 更新 GreenLight 产品",
+        "running_label": "⏳ GreenLight 更新中...",
+        "started_message": "🚀 GreenLight 更新已开始，请耐心等待...",
+        "start_log": "开始更新 GreenLight 产品...",
+        "summary_path": SUMMARY_PATHS["greenlight"],
+        "summary": format_greenlight_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 GreenLight 产品样本...", "抓取 GreenLight 产品", "scrape_greenlight_api.py"),
+            ("3/4 合并 GreenLight 产品清单...", "合并 GreenLight 产品清单", "update_greenlight_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "trendshobby",
+        "name": "TH / Trends Hobby产品",
+        "category_id": "trendshobby",
+        "endpoint": "/api/update-trendshobby",
+        "button_label": "🔄 更新 TH 产品",
+        "running_label": "⏳ TH 更新中...",
+        "started_message": "🚀 TH 更新已开始，请耐心等待...",
+        "start_log": "开始更新 TH / Trends Hobby 产品...",
+        "summary_path": SUMMARY_PATHS["trendshobby"],
+        "summary": format_trendshobby_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 TH 渠道产品...", "抓取 TH 产品", "scrape_trendshobby_api.py"),
+            ("3/4 合并 TH 产品清单...", "合并 TH 产品清单", "update_trendshobby_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+>>>>>>> Stashed changes
 ]
 
 BRANDS_BY_ID = {brand["id"]: brand for brand in BRANDS}
