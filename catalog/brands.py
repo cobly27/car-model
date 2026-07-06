@@ -3,17 +3,19 @@
 from .config import SUMMARY_PATHS
 from .summaries import (
     format_ar_update_summary,
-<<<<<<< Updated upstream
-=======
     format_dct_update_summary,
     format_gcd_update_summary,
     format_greenlight_update_summary,
->>>>>>> Stashed changes
     format_inno_update_summary,
+    format_kaidohouse_update_summary,
+    format_kiloworks_update_summary,
+    format_minichamps_update_summary,
     format_minigt_update_summary,
     format_poprace_update_summary,
     format_spark_update_summary,
+    format_tarmacworks_update_summary,
     format_topspeed_update_summary,
+    format_trendshobby_update_summary,
 )
 
 
@@ -148,8 +150,6 @@ BRANDS = [
             ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
         ],
     },
-<<<<<<< Updated upstream
-=======
     {
         "id": "gcd",
         "name": "GCD产品",
@@ -240,7 +240,60 @@ BRANDS = [
             ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
         ],
     },
->>>>>>> Stashed changes
+    {
+        "id": "minichamps",
+        "name": "MINICHAMPS产品",
+        "category_id": "minichamps",
+        "endpoint": "/api/update-minichamps",
+        "button_label": "🔄 更新 MINICHAMPS 产品",
+        "running_label": "⏳ MINICHAMPS 更新中...",
+        "started_message": "🚀 MINICHAMPS 更新已开始，请耐心等待...",
+        "start_log": "开始更新 MINICHAMPS 产品...",
+        "summary_path": SUMMARY_PATHS["minichamps"],
+        "summary": format_minichamps_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 MINICHAMPS 全量产品...", "抓取 MINICHAMPS 产品", "scrape_minichamps_api.py"),
+            ("3/4 合并 MINICHAMPS 产品清单...", "合并 MINICHAMPS 产品清单", "update_minichamps_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "kiloworks",
+        "name": "Kilo Works产品",
+        "category_id": "kiloworks",
+        "endpoint": "/api/update-kiloworks",
+        "button_label": "🔄 更新 Kilo Works 产品",
+        "running_label": "⏳ Kilo Works 更新中...",
+        "started_message": "🚀 Kilo Works 更新已开始，请耐心等待...",
+        "start_log": "开始更新 Kilo Works 产品...",
+        "summary_path": SUMMARY_PATHS["kiloworks"],
+        "summary": format_kiloworks_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 Kilo Works 全部产品...", "抓取 Kilo Works 产品", "scrape_kiloworks_api.py"),
+            ("3/4 合并 Kilo Works 产品清单...", "合并 Kilo Works 产品清单", "update_kiloworks_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
+    {
+        "id": "kaidohouse",
+        "name": "Kaido House产品",
+        "category_id": "kaidohouse",
+        "endpoint": "/api/update-kaidohouse",
+        "button_label": "🔄 更新 Kaido House 产品",
+        "running_label": "⏳ Kaido House 更新中...",
+        "started_message": "🚀 Kaido House 更新已开始，请耐心等待...",
+        "start_log": "开始更新 Kaido House 产品...",
+        "summary_path": SUMMARY_PATHS["kaidohouse"],
+        "summary": format_kaidohouse_update_summary,
+        "steps": [
+            ("1/4 备份当前文件...", None, None),
+            ("2/4 抓取 Kaido House diecast 车模...", "抓取 Kaido House 产品", "scrape_kaidohouse_api.py"),
+            ("3/4 合并 Kaido House 产品清单...", "合并 Kaido House 产品清单", "update_kaidohouse_products_api.py"),
+            ("4/4 重新生成HTML页面...", "重新生成HTML页面", "generate_minigt_html.py"),
+        ],
+    },
 ]
 
 BRANDS_BY_ID = {brand["id"]: brand for brand in BRANDS}

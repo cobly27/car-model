@@ -5,9 +5,12 @@ import json
 import re
 import sys
 import time
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import parse_qs, urljoin, urlparse
+
+warnings.filterwarnings("ignore", message="urllib3 v2 only supports OpenSSL.*")
 
 import requests
 from bs4 import BeautifulSoup
@@ -21,10 +24,13 @@ SUMMARY_PATH = BASE_DIR / "topspeed_update_summary.json"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Connection": "close",
 }
-TIMEOUT = 30
-MAX_WORKERS = 8
-DETAIL_WORKERS = 8
+TIMEOUT = (8, 18)
+MAX_WORKERS = 3
+DETAIL_WORKERS = 4
+MAX_RETRIES = 3
 VALID_STATUSES = {"Pre-Order", "Sold Out"}
 MAX_IMAGES_PER_PRODUCT = 4
 
@@ -37,9 +43,17 @@ def fix_url(src):
 
 
 def get_page(url):
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-    resp.raise_for_status()
-    return resp.text
+    last_error = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+            resp.raise_for_status()
+            return resp.text
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt < MAX_RETRIES:
+                time.sleep(min(1.5 * attempt, 5))
+    raise RuntimeError(f"连续 {MAX_RETRIES} 次请求失败：{url}：{last_error}")
 
 
 def parse_categories(html):
@@ -151,12 +165,12 @@ def fetch_category(category):
             products.extend(parse_products(html, category))
         except Exception as exc:
             failed_pages.append(page)
-            print(f"  {category['name']} p={page}: 抓取失败 - {exc}")
+            print(f"  {category['name']} p={page}: 抓取失败 - {exc}", flush=True)
 
     if failed_pages:
         raise RuntimeError(f"{category['name']} 有分页抓取失败：{failed_pages}")
 
-    print(f"  {category['name']}: {len(products)} 个列表项，分页 {len(pages)} 页")
+    print(f"  {category['name']}: {len(products)} 个列表项，分页 {len(pages)} 页", flush=True)
     return category, products
 
 
@@ -235,39 +249,60 @@ def enrich_details(products):
             try:
                 enriched_product = future.result()
                 enriched.append(enriched_product)
-                print(f"  ✓ {enriched_product.get('sku', '') or enriched_product['detail_id']}: {len(enriched_product.get('images', []))} 图")
+                print(f"  ✓ {enriched_product.get('sku', '') or enriched_product['detail_id']}: {len(enriched_product.get('images', []))} 图", flush=True)
             except Exception as exc:
                 fallback = dict(product)
                 fallback.pop("detail_url", None)
                 enriched.append(fallback)
                 failed_ids.append(product.get("detail_id"))
-                print(f"  ⚠️ {product.get('detail_id')}: 详情抓取失败，保留列表图 - {exc}")
+                print(f"  ⚠️ {product.get('detail_id')}: 详情抓取失败，保留列表图 - {exc}", flush=True)
 
             if index % 50 == 0 or index == len(products):
-                print(f"  详情进度：{index}/{len(products)}，耗时 {time.time() - start:.0f}s")
+                print(f"  详情进度：{index}/{len(products)}，耗时 {time.time() - start:.0f}s", flush=True)
 
     return enriched, failed_ids
 
 
 def main():
     try:
-        print("开始抓取 TOP SPEED 分类...")
+        print("开始抓取 TOP SPEED 分类...", flush=True)
         index_html = get_page(INDEX_URL)
         categories = parse_categories(index_html)
         if not categories:
             raise RuntimeError("未识别到 TOP SPEED 子分类")
 
-        print(f"检测到 {len(categories)} 个子分类，开始抓取产品列表...")
+        print(f"检测到 {len(categories)} 个子分类，开始抓取产品列表...", flush=True)
         products_by_id = {}
         category_counts = {}
+        failed_categories = []
 
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             futures = {executor.submit(fetch_category, category): category for category in categories}
             for future in as_completed(futures):
-                category, products = future.result()
-                category_counts[category["name"]] = len(products)
-                for product in products:
-                    merge_category_product(products_by_id, product)
+                category = futures[future]
+                try:
+                    category, products = future.result()
+                    category_counts[category["name"]] = len(products)
+                    for product in products:
+                        merge_category_product(products_by_id, product)
+                except Exception as exc:
+                    failed_categories.append(category)
+                    print(f"  {category['name']}: 子分类抓取失败 - {exc}", flush=True)
+
+        if failed_categories:
+            print(f"开始串行补抓失败子分类：{[item['name'] for item in failed_categories]}", flush=True)
+            retry_failed = []
+            for category in failed_categories:
+                try:
+                    category, products = fetch_category(category)
+                    category_counts[category["name"]] = len(products)
+                    for product in products:
+                        merge_category_product(products_by_id, product)
+                except Exception as exc:
+                    retry_failed.append(category["name"])
+                    print(f"  {category['name']}: 补抓失败 - {exc}", flush=True)
+            if retry_failed:
+                raise RuntimeError(f"有 {len(retry_failed)} 个子分类抓取失败：{retry_failed[:8]}")
 
         products = sorted(products_by_id.values(), key=lambda item: item.get("detail_id", 0), reverse=True)
         if not products:

@@ -1272,6 +1272,33 @@
     "trendshobby_available": true
   },
   {
+    "detail_id": "th-a1e0c71f62f2",
+    "sku": "TH-A1E0C71F62F2",
+    "name": "Lamborghini Temerario x Keith Haring TaiPei Toy Show 2026 1/64 Diecast",
+    "status": "Released",
+    "image": "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniTemerarioxKeithHaringTaiPeiToyShow2026.jpg?v=1781283091",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniTemerarioxKeithHaringTaiPeiToyShow2026.jpg?v=1781283091"
+    ],
+    "trendshobby_url": "https://treasuredmodels.com/products/trends-hobby-lamborghini-temerario-x-keith-haring-taipei-toy-show-2026-1-64-diecast",
+    "trendshobby_handle": "trends-hobby-lamborghini-temerario-x-keith-haring-taipei-toy-show-2026-1-64-diecast",
+    "trendshobby_sources": [
+      {
+        "id": "treasuredmodels",
+        "name": "Treasured Models",
+        "url": "https://treasuredmodels.com/products/trends-hobby-lamborghini-temerario-x-keith-haring-taipei-toy-show-2026-1-64-diecast",
+        "product_id": "8414179000506"
+      }
+    ],
+    "trendshobby_source_names": [
+      "Treasured Models"
+    ],
+    "trendshobby_model_code": "",
+    "trendshobby_display_order": 47,
+    "trendshobby_price": "450.00",
+    "trendshobby_available": true
+  },
+  {
     "detail_id": "th-241084l",
     "sku": "241084L",
     "name": "Porsche 911 GT3 R Pure Rxcing 2024 LeMans 24H LMGT3 #92 241084L 1/64 Diecast",
@@ -1294,7 +1321,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241084L",
-    "trendshobby_display_order": 47,
+    "trendshobby_display_order": 48,
     "trendshobby_price": "134.00",
     "trendshobby_available": false
   },
@@ -1321,7 +1348,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241083F",
-    "trendshobby_display_order": 48,
+    "trendshobby_display_order": 49,
     "trendshobby_price": "134.00",
     "trendshobby_available": false
   },
@@ -1351,7 +1378,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241086B",
-    "trendshobby_display_order": 49,
+    "trendshobby_display_order": 50,
     "trendshobby_price": "98.00",
     "trendshobby_available": true
   },
@@ -1378,7 +1405,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241084I",
-    "trendshobby_display_order": 50,
+    "trendshobby_display_order": 51,
     "trendshobby_price": "134.00",
     "trendshobby_available": false
   },
@@ -1405,7 +1432,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241084J",
-    "trendshobby_display_order": 51,
+    "trendshobby_display_order": 52,
     "trendshobby_price": "134.00",
     "trendshobby_available": false
   },
@@ -1432,36 +1459,36 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241083D",
-    "trendshobby_display_order": 52,
+    "trendshobby_display_order": 53,
     "trendshobby_price": "161.00",
     "trendshobby_available": true
   },
   {
-    "detail_id": "th-a1e0c71f62f2",
-    "sku": "TH-A1E0C71F62F2",
-    "name": "Lamborghini Temerario x Keith Haring TaiPei Toy Show 2026 1/64 Diecast",
-    "status": "Sold Out",
-    "image": "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniTemerarioxKeithHaringTaiPeiToyShow2026.jpg?v=1781283091",
+    "detail_id": "th-241084g",
+    "sku": "241084G",
+    "name": "Porsche 911 GT3 R Bathurst 12 Hour 2026 #911 241084G 1/64 Diecast",
+    "status": "Pre-Order",
+    "image": "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/Porsche911Gt3RBathurst12Hour2026_911241084G.jpg?v=1781937138",
     "images": [
-      "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniTemerarioxKeithHaringTaiPeiToyShow2026.jpg?v=1781283091"
+      "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/Porsche911Gt3RBathurst12Hour2026_911241084G.jpg?v=1781937138"
     ],
-    "trendshobby_url": "https://treasuredmodels.com/products/trends-hobby-lamborghini-temerario-x-keith-haring-taipei-toy-show-2026-1-64-diecast",
-    "trendshobby_handle": "trends-hobby-lamborghini-temerario-x-keith-haring-taipei-toy-show-2026-1-64-diecast",
+    "trendshobby_url": "https://treasuredmodels.com/products/pre-order-trends-hobby-porsche-911-gt3-r-bathurst-12-hour-2026-911-241084g-1-64-diecast",
+    "trendshobby_handle": "pre-order-trends-hobby-porsche-911-gt3-r-bathurst-12-hour-2026-911-241084g-1-64-diecast",
     "trendshobby_sources": [
       {
         "id": "treasuredmodels",
         "name": "Treasured Models",
-        "url": "https://treasuredmodels.com/products/trends-hobby-lamborghini-temerario-x-keith-haring-taipei-toy-show-2026-1-64-diecast",
-        "product_id": "8414179000506"
+        "url": "https://treasuredmodels.com/products/pre-order-trends-hobby-porsche-911-gt3-r-bathurst-12-hour-2026-911-241084g-1-64-diecast",
+        "product_id": "8419759784122"
       }
     ],
     "trendshobby_source_names": [
       "Treasured Models"
     ],
-    "trendshobby_model_code": "",
-    "trendshobby_display_order": 53,
-    "trendshobby_price": "420.00",
-    "trendshobby_available": false
+    "trendshobby_model_code": "241084G",
+    "trendshobby_display_order": 54,
+    "trendshobby_price": "135.00",
+    "trendshobby_available": true
   },
   {
     "detail_id": "th-241084k",
@@ -1486,7 +1513,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241084K",
-    "trendshobby_display_order": 54,
+    "trendshobby_display_order": 55,
     "trendshobby_price": "134.00",
     "trendshobby_available": false
   },
@@ -1513,7 +1540,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241083E",
-    "trendshobby_display_order": 55,
+    "trendshobby_display_order": 56,
     "trendshobby_price": "134.00",
     "trendshobby_available": true
   },
@@ -1540,7 +1567,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241087A",
-    "trendshobby_display_order": 56,
+    "trendshobby_display_order": 57,
     "trendshobby_price": "71.00",
     "trendshobby_available": false
   },
@@ -1567,7 +1594,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241087C",
-    "trendshobby_display_order": 57,
+    "trendshobby_display_order": 58,
     "trendshobby_price": "71.00",
     "trendshobby_available": true
   },
@@ -1596,7 +1623,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "",
-    "trendshobby_display_order": 58,
+    "trendshobby_display_order": 59,
     "trendshobby_price": "280.00",
     "trendshobby_available": false
   },
@@ -1626,9 +1653,36 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "",
-    "trendshobby_display_order": 59,
+    "trendshobby_display_order": 60,
     "trendshobby_price": "250.00",
     "trendshobby_available": false
+  },
+  {
+    "detail_id": "th-241083p",
+    "sku": "241083P",
+    "name": "Lamborghini Huracan GT3 Evo 2 GTWCA Malaysia 2026 #29 241083P 1/64 Diecast",
+    "status": "Pre-Order",
+    "image": "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniHuracanGT3Evo2GTWCAMalaysia2026_29241083P.jpg?v=1781937299",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniHuracanGT3Evo2GTWCAMalaysia2026_29241083P.jpg?v=1781937299"
+    ],
+    "trendshobby_url": "https://treasuredmodels.com/products/pre-order-trends-hobby-lamborghini-huracan-gt3-evo-2-gtwca-malaysia-2026-29-241083p-1-64-diecast",
+    "trendshobby_handle": "pre-order-trends-hobby-lamborghini-huracan-gt3-evo-2-gtwca-malaysia-2026-29-241083p-1-64-diecast",
+    "trendshobby_sources": [
+      {
+        "id": "treasuredmodels",
+        "name": "Treasured Models",
+        "url": "https://treasuredmodels.com/products/pre-order-trends-hobby-lamborghini-huracan-gt3-evo-2-gtwca-malaysia-2026-29-241083p-1-64-diecast",
+        "product_id": "8419760013498"
+      }
+    ],
+    "trendshobby_source_names": [
+      "Treasured Models"
+    ],
+    "trendshobby_model_code": "241083P",
+    "trendshobby_display_order": 61,
+    "trendshobby_price": "135.00",
+    "trendshobby_available": true
   },
   {
     "detail_id": "th-241086a",
@@ -1656,7 +1710,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241086A",
-    "trendshobby_display_order": 60,
+    "trendshobby_display_order": 62,
     "trendshobby_price": "98.00",
     "trendshobby_available": true
   },
@@ -1684,7 +1738,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241079A",
-    "trendshobby_display_order": 61,
+    "trendshobby_display_order": 63,
     "trendshobby_price": "79.00",
     "trendshobby_available": false
   },
@@ -1712,7 +1766,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241079B",
-    "trendshobby_display_order": 62,
+    "trendshobby_display_order": 64,
     "trendshobby_price": "79.00",
     "trendshobby_available": true
   },
@@ -1739,7 +1793,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241090C",
-    "trendshobby_display_order": 63,
+    "trendshobby_display_order": 65,
     "trendshobby_price": "79.00",
     "trendshobby_available": true
   },
@@ -1769,8 +1823,62 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "",
-    "trendshobby_display_order": 64,
+    "trendshobby_display_order": 66,
     "trendshobby_price": "240.00",
+    "trendshobby_available": true
+  },
+  {
+    "detail_id": "th-241094a",
+    "sku": "241094A",
+    "name": "Lamborghini Urus Performante x Jean-Michel Basquiat White Livery 241094A 1/64 Diecast (Copy)",
+    "status": "Pre-Order",
+    "image": "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniUrusPerformantexJean-MichelBasquiat241094A.jpg?v=1781937686",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniUrusPerformantexJean-MichelBasquiat241094A.jpg?v=1781937686"
+    ],
+    "trendshobby_url": "https://treasuredmodels.com/products/pre-order-trends-hobby-lamborghini-urus-performante-x-jean-michel-basquiat-241094a-1-64-diecast-copy",
+    "trendshobby_handle": "pre-order-trends-hobby-lamborghini-urus-performante-x-jean-michel-basquiat-241094a-1-64-diecast-copy",
+    "trendshobby_sources": [
+      {
+        "id": "treasuredmodels",
+        "name": "Treasured Models",
+        "url": "https://treasuredmodels.com/products/pre-order-trends-hobby-lamborghini-urus-performante-x-jean-michel-basquiat-241094a-1-64-diecast-copy",
+        "product_id": "8419760570554"
+      }
+    ],
+    "trendshobby_source_names": [
+      "Treasured Models"
+    ],
+    "trendshobby_model_code": "241094A",
+    "trendshobby_display_order": 67,
+    "trendshobby_price": "155.00",
+    "trendshobby_available": true
+  },
+  {
+    "detail_id": "th-241094b",
+    "sku": "241094B",
+    "name": "Lamborghini Urus Performante x Jean-Michel Basquiat Black Livery 241094B 1/64 Diecast",
+    "status": "Pre-Order",
+    "image": "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniUrusuPerformantexJean-MichelBasquiat241094B.jpg?v=1781937481",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0669/9892/7546/files/LamborghiniUrusuPerformantexJean-MichelBasquiat241094B.jpg?v=1781937481"
+    ],
+    "trendshobby_url": "https://treasuredmodels.com/products/pre-order-trends-hobby-lamborghini-urus-performante-x-jean-michel-basquiat-241094b-1-64-diecast",
+    "trendshobby_handle": "pre-order-trends-hobby-lamborghini-urus-performante-x-jean-michel-basquiat-241094b-1-64-diecast",
+    "trendshobby_sources": [
+      {
+        "id": "treasuredmodels",
+        "name": "Treasured Models",
+        "url": "https://treasuredmodels.com/products/pre-order-trends-hobby-lamborghini-urus-performante-x-jean-michel-basquiat-241094b-1-64-diecast",
+        "product_id": "8419760537786"
+      }
+    ],
+    "trendshobby_source_names": [
+      "Treasured Models"
+    ],
+    "trendshobby_model_code": "241094B",
+    "trendshobby_display_order": 68,
+    "trendshobby_price": "155.00",
     "trendshobby_available": true
   },
   {
@@ -1796,7 +1904,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241082B",
-    "trendshobby_display_order": 65,
+    "trendshobby_display_order": 69,
     "trendshobby_price": "98.00",
     "trendshobby_available": true
   },
@@ -1823,7 +1931,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241082A",
-    "trendshobby_display_order": 66,
+    "trendshobby_display_order": 70,
     "trendshobby_price": "98.00",
     "trendshobby_available": true
   },
@@ -1850,7 +1958,7 @@
       "Treasured Models"
     ],
     "trendshobby_model_code": "241090B",
-    "trendshobby_display_order": 67,
+    "trendshobby_display_order": 71,
     "trendshobby_price": "79.00",
     "trendshobby_available": true
   }

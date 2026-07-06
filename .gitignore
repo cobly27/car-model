@@ -33,17 +33,21 @@ static/inno_image_cache/
 poprace_products_api.json
 poprace_update_summary.json
 static/poprace_image_cache/
-<<<<<<< Updated upstream
-=======
 gcd_products_api.json
 gcd_update_summary.json
 dct_products_api.json
 dct_update_summary.json
+static/gcd_image_cache/
 tarmacworks_products_api.json
 tarmacworks_update_summary.json
 greenlight_products_api.json
 greenlight_update_summary.json
 trendshobby_products_api.json
 trendshobby_update_summary.json
->>>>>>> Stashed changes
+minichamps_products_api.json
+minichamps_update_summary.json
+kiloworks_products_api.json
+kiloworks_update_summary.json
+kaidohouse_products_api.json
+kaidohouse_update_summary.json
 update_history.json

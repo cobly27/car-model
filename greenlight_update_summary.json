@@ -7,12 +7,12 @@
   "image_failed_count": 0,
   "api_total_count": 58,
   "page_count": 3,
-  "original_greenlight_count": 0,
-  "added_count": 20,
+  "original_greenlight_count": 20,
+  "added_count": 0,
   "updated_count": 0,
-  "unchanged_count": 0,
+  "unchanged_count": 20,
   "preserved_count": 0,
   "duplicate_count": 0,
   "final_greenlight_count": 20,
-  "total_products": 12017
+  "total_products": 12094
 }

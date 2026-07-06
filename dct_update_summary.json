@@ -1,6 +1,6 @@
 {
-  "source": "https://www.gcd-models.com/category/products/dct/",
   "category_id": 37,
+  "source": "https://www.gcd-models.com/category/products/dct/",
   "page_count": 1,
   "fetched_count": 11,
   "detail_success_count": 11,
@@ -8,10 +8,10 @@
   "max_images_per_product": 4,
   "original_dct_count": 11,
   "added_count": 0,
-  "updated_count": 0,
-  "unchanged_count": 11,
+  "updated_count": 11,
+  "unchanged_count": 0,
   "preserved_count": 0,
   "duplicate_count": 0,
   "final_dct_count": 11,
-  "total_products": 11977
+  "total_products": 12094
 }

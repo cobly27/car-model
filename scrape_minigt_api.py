@@ -4,9 +4,13 @@
 import json
 import re
 import sys
+import time
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urljoin
+
+warnings.filterwarnings("ignore", message="urllib3 v2 only supports OpenSSL.*")
 
 import requests
 from bs4 import BeautifulSoup
@@ -20,9 +24,12 @@ SUMMARY_PATH = BASE_DIR / "minigt_update_summary.json"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Connection": "close",
 }
-TIMEOUT = 30
-MAX_WORKERS = 8
+TIMEOUT = (8, 15)
+MAX_WORKERS = 3
+MAX_RETRIES = 3
 VALID_STATUSES = {"Pre-Order", "Released", "Sold Out"}
 
 
@@ -34,9 +41,7 @@ def fix_url(src):
 
 
 def get_total_pages():
-    resp = requests.get(LIST_URL.format(0), headers=HEADERS, timeout=TIMEOUT)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
+    soup = BeautifulSoup(fetch_page_html(0), "html.parser")
 
     max_page = 0
     for link in soup.find_all("a", href=re.compile(r"p=\d+")):
@@ -44,6 +49,20 @@ def get_total_pages():
         if match:
             max_page = max(max_page, int(match.group(1)))
     return max_page + 1
+
+
+def fetch_page_html(page):
+    last_error = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = requests.get(LIST_URL.format(page), headers=HEADERS, timeout=TIMEOUT)
+            resp.raise_for_status()
+            return resp.text
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt < MAX_RETRIES:
+                time.sleep(min(1.5 * attempt, 5))
+    raise RuntimeError(f"p={page} 连续 {MAX_RETRIES} 次请求失败：{last_error}")
 
 
 def parse_products(html):
@@ -98,10 +117,8 @@ def parse_products(html):
 
 
 def fetch_page(page):
-    resp = requests.get(LIST_URL.format(page), headers=HEADERS, timeout=TIMEOUT)
-    resp.raise_for_status()
-    products = parse_products(resp.text)
-    print(f"  p={page}: {len(products)} 个产品")
+    products = parse_products(fetch_page_html(page))
+    print(f"  p={page}: {len(products)} 个产品", flush=True)
     return page, products
 
 
@@ -131,7 +148,7 @@ def main():
         if total_pages <= 0:
             raise RuntimeError("未能识别 MINI GT 分页")
 
-        print(f"检测到 {total_pages} 页，开始抓取 MINI GT 产品列表...")
+        print(f"检测到 {total_pages} 页，开始抓取 MINI GT 产品列表...", flush=True)
         all_products = []
         failed_pages = []
 
@@ -144,10 +161,20 @@ def main():
                     all_products.extend(products)
                 except Exception as exc:
                     failed_pages.append(page)
-                    print(f"  p={page}: 抓取失败 - {exc}")
+                    print(f"  p={page}: 抓取失败 - {exc}", flush=True)
 
         if failed_pages:
-            raise RuntimeError(f"有 {len(failed_pages)} 页抓取失败：{failed_pages[:10]}")
+            print(f"开始串行补抓失败页：{failed_pages}", flush=True)
+            retry_failed_pages = []
+            for page in failed_pages:
+                try:
+                    _, products = fetch_page(page)
+                    all_products.extend(products)
+                except Exception as exc:
+                    retry_failed_pages.append(page)
+                    print(f"  p={page}: 补抓失败 - {exc}", flush=True)
+            if retry_failed_pages:
+                raise RuntimeError(f"有 {len(retry_failed_pages)} 页抓取失败：{retry_failed_pages[:10]}")
 
         products, duplicate_count = dedupe_products(all_products)
         if not products:
@@ -165,12 +192,12 @@ def main():
         with SUMMARY_PATH.open("w", encoding="utf-8") as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)
 
-        print()
-        print(f"官网抓取：{len(products)} 个产品")
-        print(f"跳过重复：{duplicate_count} 个")
-        print(f"已保存到：{OUTPUT_PATH.name}")
+        print(flush=True)
+        print(f"官网抓取：{len(products)} 个产品", flush=True)
+        print(f"跳过重复：{duplicate_count} 个", flush=True)
+        print(f"已保存到：{OUTPUT_PATH.name}", flush=True)
     except Exception as exc:
-        print(f"错误：{exc}")
+        print(f"错误：{exc}", flush=True)
         sys.exit(1)
 
 

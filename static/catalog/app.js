@@ -15,6 +15,8 @@ const state = {
     currentPage: 1,
     pageSize: 20,
     currentView: "cards",
+    sortMode: "default",
+    availableOnly: false,
     searchQuery: "",
     filteredProducts: [],
     filterByCategory: {},
@@ -40,14 +42,14 @@ const categoryScopedFilters = {
     "spark64": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "inno": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "poprace": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
-<<<<<<< Updated upstream
-=======
     "gcd": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "dct": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "tarmacworks": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "greenlight": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "trendshobby": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
->>>>>>> Stashed changes
+    "minichamps": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+    "kiloworks": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
+    "kaidohouse": new Set(["", "Pre-Order", "Released", "Sold Out", "fav"]),
     "ar": new Set(["", "fav"]),
 };
 
@@ -96,6 +98,8 @@ function saveUiState() {
         currentPage: state.currentPage,
         pageSize: state.pageSize,
         currentView: state.currentView,
+        sortMode: state.sortMode,
+        availableOnly: state.availableOnly,
     }));
 }
 
@@ -113,8 +117,6 @@ function productUrl(product) {
     if (product.categoryId === "spark" || product.categoryId === "spark64") return `https://www.sparkmodel.com/en/products/${detailId}`;
     if (product.categoryId === "inno") return product.inno_url || "https://www.inno-models.com/our-products/?jsf=jet-engine:shop-loop&tax=pa_scale:1-64";
     if (product.categoryId === "poprace") return product.poprace_source_url || "https://www.xcartoys.com/S_series";
-<<<<<<< Updated upstream
-=======
     if (product.categoryId === "gcd") return product.gcd_url || "https://www.gcd-models.com/category/products/gcd/";
     if (product.categoryId === "dct") return product.dct_url || "https://www.gcd-models.com/category/products/dct/";
     if (product.categoryId === "tarmacworks") {
@@ -124,8 +126,195 @@ function productUrl(product) {
     }
     if (product.categoryId === "greenlight") return product.greenlight_url || "https://www.greenlighttoys.com/shop/";
     if (product.categoryId === "trendshobby") return product.trendshobby_url || "https://www.instagram.com/trends.hobby/";
->>>>>>> Stashed changes
+    if (product.categoryId === "minichamps") return product.minichamps_url || "https://ck-modelcars.de/en/?sSearch=minichamps";
+    if (product.categoryId === "kiloworks") return product.kiloworks_url || "https://www.3000toys.com/cars/kilo-works";
+    if (product.categoryId === "kaidohouse") {
+        if (product.kaidohouse_url) return product.kaidohouse_url;
+        if (product.kaidohouse_handle) return `https://www.kaidohouse.com/products/${product.kaidohouse_handle}`;
+        return "https://www.kaidohouse.com/collections/diecast";
+    }
     return `https://minigt.tsm-models.com/index.php?action=product-detail&id=${detailId}`;
+}
+
+function numericValue(value) {
+    const parsed = parseFloat(String(value ?? "").replace(/[^0-9.]/g, ""));
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function productPrice(product) {
+    const raw = product.tarmacworks_price || product.trendshobby_price || product.minichamps_price || product.kiloworks_price || product.kaidohouse_price || "";
+    const value = numericValue(raw);
+    if (value === null) return null;
+    const currency = String(product.minichamps_currency || product.kiloworks_currency || "").toUpperCase();
+    if (product.minichamps_price || product.kiloworks_price) {
+        const prefix = currency === "GBP" ? "£" : currency === "EUR" ? "€" : currency === "USD" ? "$" : currency ? `${currency} ` : "$";
+        return {
+            value,
+            label: `${prefix}${value.toFixed(2)}`,
+        };
+    }
+    return {
+        value,
+        label: `$${value.toFixed(2)}`,
+    };
+}
+
+function productAvailability(product) {
+    if (product.tarmacworks_available !== undefined) {
+        return product.tarmacworks_available
+            ? { value: true, label: "有货", tone: "available" }
+            : { value: false, label: "缺货", tone: "unavailable" };
+    }
+    if (product.trendshobby_available !== undefined) {
+        return product.trendshobby_available
+            ? { value: true, label: "有货", tone: "available" }
+            : { value: false, label: "缺货", tone: "unavailable" };
+    }
+    if (product.greenlight_on_backorder) return { value: true, label: "预订", tone: "preorder" };
+    if (product.greenlight_in_stock !== undefined) {
+        return product.greenlight_in_stock
+            ? { value: true, label: "有货", tone: "available" }
+            : { value: false, label: "缺货", tone: "unavailable" };
+    }
+    if (product.minichamps_available !== undefined) {
+        return product.minichamps_available
+            ? { value: true, label: "有货", tone: "available" }
+            : { value: false, label: "缺货", tone: "unavailable" };
+    }
+    if (product.kiloworks_available !== undefined) {
+        if (product.status === "Pre-Order") return { value: false, label: "预订", tone: "preorder" };
+        return product.kiloworks_available
+            ? { value: true, label: "有货", tone: "available" }
+            : { value: false, label: "缺货", tone: "unavailable" };
+    }
+    if (product.kaidohouse_available !== undefined) {
+        if (product.status === "Pre-Order") return { value: false, label: "预订", tone: "preorder" };
+        return product.kaidohouse_available
+            ? { value: true, label: "有货", tone: "available" }
+            : { value: false, label: "缺货", tone: "unavailable" };
+    }
+    return null;
+}
+
+function productUpdatedDate(product) {
+    const raw = product.tarmacworks_updated_at || product.tarmacworks_published_at || product.kaidohouse_updated_at || product.kaidohouse_published_at || "";
+    if (!raw) return null;
+    const time = Date.parse(raw);
+    if (!Number.isFinite(time)) return null;
+    return {
+        value: time,
+        label: new Date(time).toISOString().slice(0, 10),
+    };
+}
+
+function productApiChips(product) {
+    const chips = [];
+    const price = productPrice(product);
+    const availability = productAvailability(product);
+    const updated = productUpdatedDate(product);
+    if (price) chips.push({ label: price.label, tone: "price" });
+    if (availability) chips.push({ label: availability.label, tone: availability.tone });
+    if (product.spark_scale) chips.push({ label: product.spark_scale, tone: "neutral" });
+    if (product.spark_year) chips.push({ label: String(product.spark_year), tone: "neutral" });
+    if (product.spark_brand) chips.push({ label: product.spark_brand, tone: "neutral" });
+    if (product.minichamps_scale) chips.push({ label: product.minichamps_scale, tone: "neutral" });
+    if (product.minichamps_source) chips.push({ label: product.minichamps_source, tone: "source" });
+    if (product.kiloworks_scale) chips.push({ label: product.kiloworks_scale, tone: "neutral" });
+    if (product.kiloworks_source) chips.push({ label: product.kiloworks_source, tone: "source" });
+    if (product.kaidohouse_product_type) chips.push({ label: product.kaidohouse_product_type, tone: "neutral" });
+    (product.tarmacworks_tags || []).slice(0, 2).forEach(tag => chips.push({ label: tag, tone: "neutral" }));
+    (product.kaidohouse_tags || []).slice(0, 2).forEach(tag => chips.push({ label: tag, tone: "neutral" }));
+    (product.greenlight_categories || []).slice(0, 2).forEach(category => chips.push({ label: category, tone: "neutral" }));
+    (product.trendshobby_source_names || []).slice(0, 2).forEach(source => chips.push({ label: source, tone: "source" }));
+    if (updated) chips.push({ label: updated.label, tone: "date" });
+    return chips;
+}
+
+function productInfoText(product) {
+    const parts = [];
+    if (product.spark_scale) parts.push(product.spark_scale);
+    if (product.spark_year) parts.push(String(product.spark_year));
+    if (product.spark_brand) parts.push(product.spark_brand);
+    if (product.minichamps_scale) parts.push(product.minichamps_scale);
+    if (product.minichamps_ean) parts.push(`EAN ${product.minichamps_ean}`);
+    if (product.minichamps_source) parts.push(product.minichamps_source);
+    if (product.kiloworks_scale) parts.push(product.kiloworks_scale);
+    if (product.kiloworks_brand) parts.push(product.kiloworks_brand);
+    if (product.kiloworks_arrival) parts.push(product.kiloworks_arrival);
+    if (product.kiloworks_source) parts.push(product.kiloworks_source);
+    if (product.tarmacworks_product_type) parts.push(product.tarmacworks_product_type);
+    if (product.tarmacworks_tags?.length) parts.push(product.tarmacworks_tags.slice(0, 2).join(" / "));
+    if (product.kaidohouse_product_type) parts.push(product.kaidohouse_product_type);
+    if (product.kaidohouse_tags?.length) parts.push(product.kaidohouse_tags.slice(0, 2).join(" / "));
+    if (product.greenlight_categories?.length) parts.push(product.greenlight_categories.slice(0, 2).join(" / "));
+    if (product.trendshobby_source_names?.length) parts.push(product.trendshobby_source_names.join(" / "));
+    const updated = productUpdatedDate(product);
+    if (updated) parts.push(`更新 ${updated.label}`);
+    return parts.join(" · ") || "-";
+}
+
+function productApiSearchText(product) {
+    return [
+        product.spark_brand,
+        product.spark_manufacturer,
+        product.spark_model,
+        product.spark_scale,
+        product.spark_state,
+        product.spark_year,
+        product.tarmacworks_vendor,
+        product.tarmacworks_product_type,
+        ...(product.tarmacworks_tags || []),
+        ...(product.greenlight_categories || []),
+        product.greenlight_type,
+        ...(product.trendshobby_source_names || []),
+        product.trendshobby_model_code,
+        product.minichamps_source,
+        product.minichamps_article_id,
+        product.minichamps_ean,
+        product.minichamps_scale,
+        product.minichamps_availability,
+        product.kiloworks_brand,
+        product.kiloworks_scale,
+        product.kiloworks_source,
+        product.kiloworks_arrival,
+        product.kiloworks_added_date,
+        product.kiloworks_availability,
+        product.kaidohouse_vendor,
+        product.kaidohouse_product_type,
+        product.kaidohouse_collection,
+        ...(product.kaidohouse_tags || []),
+        productPrice(product)?.label,
+        productAvailability(product)?.label,
+    ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function categoryHasAvailability(categoryId = state.currentCategory) {
+    const products = state.productsByCategory.get(categoryId) || [];
+    return products.some(product => productAvailability(product));
+}
+
+function categoryHasAvailableProducts(categoryId = state.currentCategory) {
+    const products = state.productsByCategory.get(categoryId) || [];
+    return products.some(product => productAvailability(product)?.value === true);
+}
+
+function categoryStatusCount(status, categoryId = state.currentCategory) {
+    const products = state.productsByCategory.get(categoryId) || [];
+    return products.filter(product => product.status === status).length;
+}
+
+function categoryFavoriteCount(categoryId = state.currentCategory) {
+    const products = state.productsByCategory.get(categoryId) || [];
+    return products.filter(product => state.favorites.has(product.sku)).length;
+}
+
+function categorySupportsSort(sortMode, categoryId = state.currentCategory) {
+    if (sortMode === "default") return true;
+    const products = state.productsByCategory.get(categoryId) || [];
+    if (sortMode === "priceAsc" || sortMode === "priceDesc") return products.some(product => productPrice(product)?.value !== undefined);
+    if (sortMode === "recent") return products.some(product => productUpdatedDate(product)?.value);
+    if (sortMode === "yearDesc") return products.some(product => Number(product.spark_year || 0) > 0);
+    return false;
 }
 
 function imagePolicy(categoryId) {
@@ -272,6 +461,8 @@ function applyCatalogPayload(data, updateConfig, preserveState = false, savedSta
     if (!preserveState) {
         state.pageSize = [20, 50, 100].includes(Number(savedState.pageSize)) ? Number(savedState.pageSize) : 20;
         state.currentView = savedState.currentView === "table" ? "table" : "cards";
+        state.sortMode = ["default", "priceAsc", "priceDesc", "recent", "yearDesc"].includes(savedState.sortMode) ? savedState.sortMode : "default";
+        state.availableOnly = Boolean(savedState.availableOnly);
         state.searchQuery = "";
     }
 
@@ -289,6 +480,7 @@ function applyCatalogPayload(data, updateConfig, preserveState = false, savedSta
         state.currentPage = Number(savedState.currentPage);
         state.pageByCategory[state.currentCategory] = state.currentPage;
     }
+    if (!categoryHasAvailability(state.currentCategory)) state.availableOnly = false;
 }
 
 async function refreshCatalogDataAfterUpdate() {
@@ -319,12 +511,14 @@ function initializeUI() {
     renderUpdateButtons();
     bindEvents();
     $("#search").value = state.searchQuery;
+    const sortSelect = $("#sortSelect");
+    if (sortSelect) sortSelect.value = state.sortMode;
     syncSearchClear();
+    syncApiControls();
     setView(state.currentView);
     syncScopedControls();
     applyFilter();
     refreshHealthBadge();
-    $("#loadingState").classList.add("hidden");
 }
 
 function renderCategoryOptions() {
@@ -372,6 +566,7 @@ function syncCategoryPicker() {
     const select = $("#categorySelect");
     const button = $("#categoryPickerButton");
     const picker = $("#categoryPicker");
+    const menu = $("#categoryMenu");
     if (!button || !picker) return;
     const category = categoryDisplay(state.currentCategory);
     if (select) select.value = state.currentCategory;
@@ -380,7 +575,9 @@ function syncCategoryPicker() {
         <span class="category-picker-arrow" aria-hidden="true">⌄</span>
     `;
     button.setAttribute("aria-expanded", picker.classList.contains("open") ? "true" : "false");
-    $("#categoryMenu")?.querySelectorAll(".category-option").forEach(option => {
+    menu?.classList.toggle("open", picker.classList.contains("open"));
+    if (picker.classList.contains("open")) positionCategoryMenu();
+    menu?.querySelectorAll(".category-option").forEach(option => {
         const selected = option.dataset.category === state.currentCategory;
         option.classList.toggle("selected", selected);
         option.setAttribute("aria-selected", selected ? "true" : "false");
@@ -392,8 +589,36 @@ function syncCategoryPicker() {
 function closeCategoryPicker() {
     const picker = $("#categoryPicker");
     if (!picker) return;
+    const menu = $("#categoryMenu");
     picker.classList.remove("open");
+    menu?.classList.remove("open");
+    if (menu) {
+        menu.style.removeProperty("--category-menu-left");
+        menu.style.removeProperty("--category-menu-top");
+        menu.style.removeProperty("--category-menu-width");
+    }
     $("#categoryPickerButton")?.setAttribute("aria-expanded", "false");
+}
+
+function portalCategoryMenu() {
+    const menu = $("#categoryMenu");
+    if (menu && menu.parentElement !== document.body) {
+        document.body.appendChild(menu);
+    }
+}
+
+function positionCategoryMenu() {
+    const button = $("#categoryPickerButton");
+    const menu = $("#categoryMenu");
+    if (!button || !menu) return;
+    const rect = button.getBoundingClientRect();
+    const margin = 8;
+    const menuWidth = Math.min(Math.max(rect.width, 300), 360, window.innerWidth - 32);
+    const left = Math.max(16, Math.min(rect.left, window.innerWidth - menuWidth - 16));
+    const top = Math.min(rect.bottom + margin, window.innerHeight - 80);
+    menu.style.setProperty("--category-menu-left", `${left}px`);
+    menu.style.setProperty("--category-menu-top", `${top}px`);
+    menu.style.setProperty("--category-menu-width", `${menuWidth}px`);
 }
 
 function closePageSizePickers() {
@@ -406,7 +631,10 @@ function closePageSizePickers() {
 function toggleCategoryPicker() {
     const picker = $("#categoryPicker");
     if (!picker) return;
-    picker.classList.toggle("open");
+    const willOpen = !picker.classList.contains("open");
+    closePageSizePickers();
+    picker.classList.toggle("open", willOpen);
+    if (willOpen) positionCategoryMenu();
     syncCategoryPicker();
 }
 
@@ -416,11 +644,12 @@ function updateButtonConfig(type) {
 
 function renderUpdateButtons() {
     $("#updateActions").innerHTML = state.updateConfigs.map(config => `
-        <button class="update-btn" data-update="${escapeHtml(config.id)}" data-scope="${escapeHtml(config.categoryId)}">${escapeHtml(config.label)}</button>
+        <button class="update-btn ${config.categoryId === state.currentCategory ? "" : "control-hidden"}" data-update="${escapeHtml(config.id)}" data-scope="${escapeHtml(config.categoryId)}">${escapeHtml(config.label)}</button>
     `).join("");
 }
 
 function bindEvents() {
+    portalCategoryMenu();
     $("#search").addEventListener("input", onSearchInput);
     $("#searchClearBtn").addEventListener("click", clearSearch);
     $("#categorySelect").addEventListener("change", event => switchCategory(event.target.value));
@@ -444,10 +673,19 @@ function bindEvents() {
             closePageSizePickers();
         }
     });
+    window.addEventListener("resize", () => {
+        if ($("#categoryPicker")?.classList.contains("open")) positionCategoryMenu();
+    });
+    window.addEventListener("scroll", () => {
+        if ($("#categoryPicker")?.classList.contains("open")) positionCategoryMenu();
+    }, { passive: true });
 
     document.querySelectorAll(".status-filter, .fav-filter").forEach(button => {
         button.addEventListener("click", () => setFilter(button.dataset.filter || ""));
     });
+
+    $("#availableFilterBtn")?.addEventListener("click", toggleAvailableFilter);
+    $("#sortSelect")?.addEventListener("change", event => setSortMode(event.target.value));
 
     document.querySelectorAll(".view-btn").forEach(button => {
         button.addEventListener("click", () => setView(button.dataset.view));
@@ -506,6 +744,7 @@ function clearSearch() {
 
 function switchCategory(categoryId) {
     if (!categoryId || categoryId === state.currentCategory) return;
+    closeCategoryPicker();
     state.filterByCategory[state.currentCategory] = state.currentFilter;
     state.pageByCategory[state.currentCategory] = state.currentPage;
     state.currentCategory = categoryId;
@@ -514,6 +753,14 @@ function switchCategory(categoryId) {
     }
     const allowed = categoryScopedFilters[categoryId] || new Set(["", "fav"]);
     state.currentFilter = allowed.has(state.filterByCategory[categoryId]) ? state.filterByCategory[categoryId] : "";
+    if (state.currentFilter && state.currentFilter !== "fav" && categoryStatusCount(state.currentFilter, categoryId) === 0) {
+        state.currentFilter = "";
+    }
+    if (state.currentFilter === "fav" && categoryFavoriteCount(categoryId) === 0) {
+        state.currentFilter = "";
+    }
+    if (!categoryHasAvailableProducts(categoryId)) state.availableOnly = false;
+    if (!categorySupportsSort(state.sortMode, categoryId)) state.sortMode = "default";
     state.currentPage = state.pageByCategory[categoryId] || 1;
     syncCategoryPicker();
     syncScopedControls();
@@ -523,11 +770,43 @@ function switchCategory(categoryId) {
 
 function setFilter(filter) {
     const allowed = categoryScopedFilters[state.currentCategory] || new Set(["", "fav"]);
+    if (filter && filter !== "fav" && categoryStatusCount(filter) === 0) {
+        showToast("当前分类没有这个状态的产品");
+        filter = "";
+    }
+    if (filter === "fav" && categoryFavoriteCount() === 0) {
+        showToast("当前分类暂无收藏产品");
+        filter = "";
+    }
     state.currentFilter = allowed.has(filter) ? filter : "";
     state.filterByCategory[state.currentCategory] = state.currentFilter;
     state.currentPage = 1;
     state.pageByCategory[state.currentCategory] = 1;
     syncFilterButtons();
+    applyFilter();
+    saveUiState();
+}
+
+function toggleAvailableFilter() {
+    if (!categoryHasAvailableProducts()) {
+        state.availableOnly = false;
+        syncApiControls();
+        showToast("当前分类暂无有货产品");
+        return;
+    }
+    state.availableOnly = !state.availableOnly;
+    state.currentPage = 1;
+    state.pageByCategory[state.currentCategory] = 1;
+    syncApiControls();
+    applyFilter();
+    saveUiState();
+}
+
+function setSortMode(sortMode) {
+    const allowed = ["default", "priceAsc", "priceDesc", "recent", "yearDesc"];
+    state.sortMode = allowed.includes(sortMode) && categorySupportsSort(sortMode) ? sortMode : "default";
+    state.currentPage = 1;
+    state.pageByCategory[state.currentCategory] = 1;
     applyFilter();
     saveUiState();
 }
@@ -544,12 +823,33 @@ function setView(view) {
 function syncScopedControls() {
     const allowed = categoryScopedFilters[state.currentCategory] || new Set(["", "fav"]);
     document.querySelectorAll(".status-filter").forEach(button => {
-        button.classList.toggle("control-hidden", !allowed.has(button.dataset.filter));
+        const filter = button.dataset.filter;
+        const visible = allowed.has(filter) && categoryStatusCount(filter) > 0;
+        button.classList.toggle("control-hidden", !visible);
+        button.disabled = !visible;
     });
+    const favoriteButton = $("#favoriteFilterBtn");
+    if (favoriteButton) {
+        const count = categoryFavoriteCount();
+        favoriteButton.disabled = count === 0;
+        favoriteButton.classList.toggle("is-disabled", count === 0);
+        favoriteButton.title = count ? `查看当前分类收藏产品（${count}）` : "当前分类暂无收藏产品";
+    }
     document.querySelectorAll(".update-btn").forEach(button => {
         button.classList.toggle("control-hidden", button.dataset.scope !== state.currentCategory);
     });
+    if (state.currentFilter && state.currentFilter !== "fav" && categoryStatusCount(state.currentFilter) === 0) {
+        state.currentFilter = "";
+        state.filterByCategory[state.currentCategory] = "";
+        showToast("已自动取消当前分类无效的状态筛选");
+    }
+    if (state.currentFilter === "fav" && categoryFavoriteCount() === 0) {
+        state.currentFilter = "";
+        state.filterByCategory[state.currentCategory] = "";
+        showToast("当前分类暂无收藏，已取消收藏筛选");
+    }
     syncFilterButtons();
+    syncApiControls();
 }
 
 function syncFilterButtons() {
@@ -557,6 +857,32 @@ function syncFilterButtons() {
         button.classList.toggle("active", (button.dataset.filter || "") === state.currentFilter);
     });
     $("#categorySelect").classList.toggle("active", state.currentFilter === "");
+}
+
+function syncApiControls() {
+    const availableButton = $("#availableFilterBtn");
+    if (availableButton) {
+        const supported = categoryHasAvailableProducts();
+        if (!supported && state.availableOnly) {
+            state.availableOnly = false;
+            showToast("当前分类暂无有货产品，已取消有货筛选");
+        }
+        availableButton.classList.toggle("control-hidden", !supported);
+        availableButton.classList.toggle("active", state.availableOnly);
+        availableButton.setAttribute("aria-pressed", state.availableOnly ? "true" : "false");
+        availableButton.disabled = !supported;
+        availableButton.title = supported ? "只显示有货产品" : "当前分类暂无有货产品";
+    }
+    const sortSelect = $("#sortSelect");
+    if (sortSelect) {
+        [...sortSelect.options].forEach(option => {
+            const supported = categorySupportsSort(option.value);
+            option.disabled = !supported;
+            option.hidden = !supported && option.value !== "default";
+        });
+        if (!categorySupportsSort(state.sortMode)) state.sortMode = "default";
+        sortSelect.value = state.sortMode;
+    }
 }
 
 function syncSearchClear() {
@@ -570,6 +896,50 @@ function currentSourceProducts() {
     return state.productsByCategory.get(state.currentCategory) || [];
 }
 
+function emptyStateMessage() {
+    const query = $("#search")?.value.trim();
+    const reasons = [];
+    if (query) reasons.push(`搜索「${query}」`);
+    if (state.currentFilter === "fav") reasons.push("收藏筛选");
+    if (state.currentFilter && state.currentFilter !== "fav") reasons.push(`${state.currentFilter} 状态`);
+    if (state.availableOnly) reasons.push("有货筛选");
+    if (state.healthIssueFilter?.categoryId === state.currentCategory) reasons.push("数据健康问题筛选");
+    if (!reasons.length) return "当前分类暂无可显示产品。";
+    return `当前条件无结果：${reasons.join(" + ")}。请清空搜索或取消筛选。`;
+}
+
+function sortedProducts(products) {
+    const items = [...products];
+    if (state.sortMode === "priceAsc" || state.sortMode === "priceDesc") {
+        const direction = state.sortMode === "priceAsc" ? 1 : -1;
+        return items.sort((a, b) => {
+            const priceA = productPrice(a)?.value;
+            const priceB = productPrice(b)?.value;
+            if (priceA === undefined && priceB === undefined) return a.index - b.index;
+            if (priceA === undefined) return 1;
+            if (priceB === undefined) return -1;
+            return (priceA - priceB) * direction;
+        });
+    }
+    if (state.sortMode === "recent") {
+        return items.sort((a, b) => {
+            const dateA = productUpdatedDate(a)?.value || 0;
+            const dateB = productUpdatedDate(b)?.value || 0;
+            if (dateA === dateB) return a.index - b.index;
+            return dateB - dateA;
+        });
+    }
+    if (state.sortMode === "yearDesc") {
+        return items.sort((a, b) => {
+            const yearA = Number(a.spark_year || 0);
+            const yearB = Number(b.spark_year || 0);
+            if (yearA === yearB) return a.index - b.index;
+            return yearB - yearA;
+        });
+    }
+    return items;
+}
+
 function applyFilter() {
     const query = $("#search").value.trim().toLowerCase();
     const products = currentSourceProducts();
@@ -580,7 +950,8 @@ function applyFilter() {
         const sku = String(product.sku || "").toLowerCase();
         const name = String(product.name || "").toLowerCase();
         const detailId = String(product.detail_id || "").toLowerCase();
-        const matchesSearch = !query || sku.includes(query) || name.includes(query) || detailId.includes(query);
+        const apiText = productApiSearchText(product);
+        const matchesSearch = !query || sku.includes(query) || name.includes(query) || detailId.includes(query) || apiText.includes(query);
         const matchesHealthIssue = !healthKeys
             || healthKeys.has(String(product.detail_id || ""))
             || healthKeys.has(String(product.sku || ""));
@@ -589,8 +960,11 @@ function applyFilter() {
             : state.currentFilter === "fav"
                 ? state.favorites.has(product.sku)
                 : product.status === state.currentFilter;
-        return matchesSearch && matchesHealthIssue && matchesStatus;
+        const availability = productAvailability(product);
+        const matchesAvailability = !state.availableOnly || availability?.value === true;
+        return matchesSearch && matchesHealthIssue && matchesStatus && matchesAvailability;
     });
+    state.filteredProducts = sortedProducts(state.filteredProducts);
 
     const totalPages = totalPagesForCurrentFilter();
     state.currentPage = Math.max(1, Math.min(state.currentPage, totalPages));
@@ -605,15 +979,24 @@ function updateStats() {
     const category = getCategory();
     const totalForCategory = category?.products?.length || 0;
     const counts = { "Released": 0, "Pre-Order": 0, "Sold Out": 0 };
+    let availableCount = 0;
+    let availabilityKnownCount = 0;
     state.filteredProducts.forEach(product => {
         if (counts[product.status] !== undefined) counts[product.status] += 1;
+        const availability = productAvailability(product);
+        if (availability) {
+            availabilityKnownCount += 1;
+            if (availability.value) availableCount += 1;
+        }
     });
     $("#statsGroup").innerHTML = `
         <span class="stat-badge">显示 ${state.filteredProducts.length} / 共 ${totalForCategory}</span>
         ${state.healthIssueFilter?.categoryId === state.currentCategory ? '<span class="stat-badge health-active">🩺 问题产品</span>' : ''}
-        <span class="stat-badge released">✅ ${counts["Released"]}</span>
-        <span class="stat-badge preorder">📦 ${counts["Pre-Order"]}</span>
-        <span class="stat-badge soldout">❌ ${counts["Sold Out"]}</span>
+        ${availabilityKnownCount && availableCount ? `<span class="stat-badge available">🟢 ${availableCount}</span>` : ""}
+        ${availabilityKnownCount && !availableCount ? '<span class="stat-badge unavailable">暂无有货</span>' : ""}
+        ${counts["Released"] ? `<span class="stat-badge released">✅ ${counts["Released"]}</span>` : ""}
+        ${counts["Pre-Order"] ? `<span class="stat-badge preorder">📦 ${counts["Pre-Order"]}</span>` : ""}
+        ${counts["Sold Out"] ? `<span class="stat-badge soldout">❌ ${counts["Sold Out"]}</span>` : ""}
     `;
 }
 
@@ -757,6 +1140,12 @@ function clampPage(value) {
 
 function renderCurrentPage() {
     const products = currentPageProducts();
+    const empty = state.filteredProducts.length === 0;
+    const loadingState = $("#loadingState");
+    if (loadingState) {
+        loadingState.textContent = empty ? emptyStateMessage() : "正在加载产品数据...";
+        loadingState.classList.toggle("hidden", !empty);
+    }
     if (state.currentView === "cards") {
         $("#cardsView").innerHTML = products.map(renderCard).join("");
     } else {
@@ -770,6 +1159,9 @@ function renderCard(product, pageIndex = 0) {
     const firstImage = imageForDisplay(images[0], product.categoryId, "card");
     const favActive = state.favorites.has(product.sku);
     const favoriteFeedback = product.sku === state.lastFavoriteSku ? " fav-pop" : "";
+    const apiChips = productApiChips(product).slice(0, 5).map(chip => `
+        <span class="api-chip ${escapeHtml(chip.tone)}">${escapeHtml(chip.label)}</span>
+    `).join("");
     return `
         <article class="card-item" data-sku="${escapeHtml(product.sku)}" data-index="${product.index}" style="--item-index: ${pageIndex % 24}">
             <div class="card-img" data-open-image="${product.index}">
@@ -779,6 +1171,7 @@ function renderCard(product, pageIndex = 0) {
             <div class="card-info">
                 <div class="sku" data-copy="${escapeHtml(product.sku)}">${escapeHtml(product.sku)}</div>
                 <a class="card-name" href="${escapeHtml(productUrl(product))}" target="_blank" rel="noopener">${escapeHtml(product.name)}</a>
+                ${apiChips ? `<div class="api-chip-row">${apiChips}</div>` : ""}
                 <div class="card-footer">
                     <span class="status ${statusClass(product.status)}">${escapeHtml(product.status || "Released")}</span>
                     <button class="fav-btn ${favActive ? "active" : ""}${favoriteFeedback}" data-fav="${escapeHtml(product.sku)}" title="收藏">${favActive ? "⭐" : "☆"}</button>
@@ -793,12 +1186,17 @@ function renderTableRow(product) {
     const firstImage = imageForDisplay(images[0], product.categoryId, "card");
     const favActive = state.favorites.has(product.sku);
     const favoriteFeedback = product.sku === state.lastFavoriteSku ? " fav-pop" : "";
+    const price = productPrice(product);
+    const availability = productAvailability(product);
     return `
         <tr data-sku="${escapeHtml(product.sku)}" data-index="${product.index}">
             <td>${product.index}</td>
             <td><span class="sku" data-copy="${escapeHtml(product.sku)}">${escapeHtml(product.sku)}</span></td>
             <td><a class="card-name" href="${escapeHtml(productUrl(product))}" target="_blank" rel="noopener">${escapeHtml(product.name)}</a></td>
             <td><span class="status ${statusClass(product.status)}">${escapeHtml(product.status || "Released")}</span></td>
+            <td>${price ? `<span class="api-chip price">${escapeHtml(price.label)}</span>` : "-"}</td>
+            <td>${availability ? `<span class="api-chip ${escapeHtml(availability.tone)}">${escapeHtml(availability.label)}</span>` : "-"}</td>
+            <td><span class="table-meta-text">${escapeHtml(productInfoText(product))}</span></td>
             <td><div class="table-images"><img class="thumb-img" src="${escapeHtml(firstImage)}" alt="${escapeHtml(product.name)}" data-open-image="${product.index}" onerror="this.src='${PLACEHOLDER_IMAGE}'"><span>${images.length} 图</span></div></td>
             <td><button class="fav-btn ${favActive ? "active" : ""}${favoriteFeedback}" data-fav="${escapeHtml(product.sku)}" title="收藏">${favActive ? "⭐" : "☆"}</button></td>
         </tr>
@@ -1431,6 +1829,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .then(initializeUI)
         .catch(error => {
             console.error(error);
-            $("#loadingState").textContent = "数据加载失败，请检查 /api/catalog-data。";
+            const detail = error?.message || String(error || "");
+            $("#loadingState").textContent = `数据加载失败：${detail || "请检查 /api/catalog-data。"}`;
         });
 });

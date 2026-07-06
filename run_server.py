@@ -12,7 +12,7 @@ from catalog.config import BASE_DIR, HTML_PATH
 from catalog.data import load_catalog_response
 from catalog.health import catalog_health_csv, catalog_health_response
 from catalog.history import load_update_history
-from catalog.images import serve_inno_image, serve_topspeed_thumb
+from catalog.images import serve_gcd_image, serve_inno_image, serve_topspeed_thumb
 from catalog.tasks import UpdateManager
 
 app = Flask(__name__)
@@ -85,6 +85,11 @@ def inno_image():
     return serve_inno_image(request.args.get("src", "").strip())
 
 
+@app.route("/api/gcd-image")
+def gcd_image():
+    return serve_gcd_image(request.args.get("src", "").strip())
+
+
 @app.route("/api/update-ar")
 def update_ar():
     return jsonify(update_manager.start("ar"))
@@ -119,8 +124,6 @@ def update_inno():
 def update_poprace():
     return jsonify(update_manager.start("poprace"))
 
-<<<<<<< Updated upstream
-=======
 @app.route("/api/update-gcd", methods=["GET", "POST"])
 def update_gcd():
     return jsonify(update_manager.start("gcd"))
@@ -145,7 +148,21 @@ def update_greenlight():
 def update_trendshobby():
     return jsonify(update_manager.start("trendshobby"))
 
->>>>>>> Stashed changes
+
+@app.route("/api/update-minichamps", methods=["GET", "POST"])
+def update_minichamps_brand():
+    return jsonify(update_manager.start("minichamps"))
+
+
+@app.route("/api/update-kiloworks", methods=["GET", "POST"])
+def update_kiloworks_brand():
+    return jsonify(update_manager.start("kiloworks"))
+
+
+@app.route("/api/update-kaidohouse", methods=["GET", "POST"])
+def update_kaidohouse_brand():
+    return jsonify(update_manager.start("kaidohouse"))
+
 
 @app.route("/api/status")
 def check_status():

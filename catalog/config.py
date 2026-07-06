@@ -15,14 +15,14 @@ SUMMARY_PATHS = {
     "spark64": BASE_DIR / "spark64_update_summary.json",
     "inno": BASE_DIR / "inno_update_summary.json",
     "poprace": BASE_DIR / "poprace_update_summary.json",
-<<<<<<< Updated upstream
-=======
     "gcd": BASE_DIR / "gcd_update_summary.json",
     "dct": BASE_DIR / "dct_update_summary.json",
     "tarmacworks": BASE_DIR / "tarmacworks_update_summary.json",
     "greenlight": BASE_DIR / "greenlight_update_summary.json",
     "trendshobby": BASE_DIR / "trendshobby_update_summary.json",
->>>>>>> Stashed changes
+    "minichamps": BASE_DIR / "minichamps_update_summary.json",
+    "kiloworks": BASE_DIR / "kiloworks_update_summary.json",
+    "kaidohouse": BASE_DIR / "kaidohouse_update_summary.json",
 }
 
 TOPSPEED_THUMB_DIR = BASE_DIR / "static" / "topspeed_thumb_cache"
@@ -32,3 +32,7 @@ TOPSPEED_IMAGE_PATH_PREFIX = "/upload/"
 INNO_IMAGE_CACHE_DIR = BASE_DIR / "static" / "inno_image_cache"
 INNO_IMAGE_HOST = "www.inno-models.com"
 INNO_IMAGE_PATH_PREFIX = "/wp-content/uploads/"
+
+GCD_IMAGE_CACHE_DIR = BASE_DIR / "static" / "gcd_image_cache"
+GCD_IMAGE_HOST = "www.gcd-models.com"
+GCD_IMAGE_PATH_PREFIX = "/wp-content/uploads/"

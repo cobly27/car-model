@@ -19,21 +19,21 @@
       "name": "Treasured Models",
       "url": "https://treasuredmodels.com/collections/trends-hobby/products.json?limit=250",
       "product_base": "https://treasuredmodels.com/products/",
-      "count": 31
+      "count": 35
     }
   ],
   "source_count": 3,
-  "raw_count": 67,
-  "fetched_count": 67,
+  "raw_count": 71,
+  "fetched_count": 71,
   "duplicate_count": 0,
   "max_images_per_product": 4,
-  "image_success_count": 67,
+  "image_success_count": 71,
   "image_failed_count": 0,
-  "original_trendshobby_count": 0,
-  "added_count": 67,
-  "updated_count": 0,
-  "unchanged_count": 0,
+  "original_trendshobby_count": 67,
+  "added_count": 4,
+  "updated_count": 21,
+  "unchanged_count": 46,
   "preserved_count": 0,
-  "final_trendshobby_count": 67,
-  "total_products": 12084
+  "final_trendshobby_count": 71,
+  "total_products": 12094
 }

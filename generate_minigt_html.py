@@ -135,6 +135,23 @@ def product_url(detail_id, category_id='mini-gt'):
         if product and product.get('trendshobby_url'):
             return product.get('trendshobby_url')
         return 'https://www.instagram.com/trends.hobby/'
+    if category_id == 'minichamps':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'minichamps'), None)
+        if product and product.get('minichamps_url'):
+            return product.get('minichamps_url')
+        return 'https://ck-modelcars.de/en/?sSearch=minichamps'
+    if category_id == 'kiloworks':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'kiloworks'), None)
+        if product and product.get('kiloworks_url'):
+            return product.get('kiloworks_url')
+        return 'https://www.3000toys.com/cars/kilo-works'
+    if category_id == 'kaidohouse':
+        product = next((item for item in products if item.get('detail_id') == detail_id and item.get('categoryId') == 'kaidohouse'), None)
+        if product and product.get('kaidohouse_url'):
+            return product.get('kaidohouse_url')
+        if product and product.get('kaidohouse_handle'):
+            return f"https://www.kaidohouse.com/products/{product.get('kaidohouse_handle')}"
+        return 'https://www.kaidohouse.com/collections/diecast'
     return f'https://minigt.tsm-models.com/index.php?action=product-detail&id={detail_id}'
 
 def preview_image_url(image, category_id='mini-gt'):
@@ -142,11 +159,15 @@ def preview_image_url(image, category_id='mini-gt'):
         return f'/api/topspeed-thumb?src={quote(image, safe="")}'
     if category_id == 'inno' and image.startswith('https://www.inno-models.com/wp-content/uploads/'):
         return f'/api/inno-image?src={quote(image, safe="")}'
+    if category_id in ('gcd', 'dct') and image.startswith('https://www.gcd-models.com/wp-content/uploads/'):
+        return f'/api/gcd-image?src={quote(image, safe="")}'
     return image
 
 def modal_image_url(image, category_id='mini-gt'):
     if category_id == 'inno' and image.startswith('https://www.inno-models.com/wp-content/uploads/'):
         return f'/api/inno-image?src={quote(image, safe="")}'
+    if category_id in ('gcd', 'dct') and image.startswith('https://www.gcd-models.com/wp-content/uploads/'):
+        return f'/api/gcd-image?src={quote(image, safe="")}'
     return image
 
 def get_images(p):
@@ -1050,9 +1071,9 @@ body.dark .img-lazy {
         <select class="quick-filter active category-select" id="categoryDropdownBtn" data-filter="" onchange="selectCategoryFromDropdown(this.value)" aria-label="选择分类">
             {category_options_html}
         </select>
-        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
-        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
-        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby kaidohouse" data-filter="Pre-Order" onclick="setQuickFilter(this)">📦 Pre-Order</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby kaidohouse" data-filter="Released" onclick="setQuickFilter(this)">✅ Released</button>
+        <button class="quick-filter" data-scope="mini-gt topspeed spark spark64 inno poprace gcd dct tarmacworks greenlight trendshobby kaidohouse" data-filter="Sold Out" onclick="setQuickFilter(this)">❌ Sold Out</button>
         <button class="quick-filter fav-only" data-filter="fav" onclick="setQuickFilter(this)">⭐ 收藏</button>
         </div>
     </div>
@@ -1076,6 +1097,7 @@ body.dark .img-lazy {
             <button class="update-btn" data-scope="tarmacworks" id="updateTarmacworksBtn" onclick="triggerUpdate('tarmacworks')">🔄 更新 TARMAC WORKS 产品</button>
             <button class="update-btn" data-scope="greenlight" id="updateGreenlightBtn" onclick="triggerUpdate('greenlight')">🔄 更新 GreenLight 产品</button>
             <button class="update-btn" data-scope="trendshobby" id="updateTrendsHobbyBtn" onclick="triggerUpdate('trendshobby')">🔄 更新 TH 产品</button>
+            <button class="update-btn" data-scope="kaidohouse" id="updateKaidoHouseBtn" onclick="triggerUpdate('kaidohouse')">🔄 更新 Kaido House 产品</button>
         </div>
     </div>
 </div>
@@ -1211,7 +1233,8 @@ const categoryScopedFilters = {
     'dct': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'tarmacworks': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
     'greenlight': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
-    'trendshobby': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav'])
+    'trendshobby': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav']),
+    'kaidohouse': new Set(['', 'Pre-Order', 'Released', 'Sold Out', 'fav'])
 };
 const productByIndex = new Map(productsData.map(product => [String(product.index), product]));
 
@@ -1743,7 +1766,8 @@ function setupControlEventListeners() {
                 updateDctBtn: 'dct',
                 updateTarmacworksBtn: 'tarmacworks',
                 updateGreenlightBtn: 'greenlight',
-                updateTrendsHobbyBtn: 'trendshobby'
+                updateTrendsHobbyBtn: 'trendshobby',
+                updateKaidoHouseBtn: 'kaidohouse'
             };
             const updateType = updateTypeById[updateButton.id];
             if (updateType) triggerUpdate(updateType);
@@ -2337,6 +2361,13 @@ const updateButtons = {
         label: '🔄 更新 TH 产品',
         runningText: '⏳ TH 更新中...',
         startText: '🚀 TH 更新已开始，请耐心等待...'
+    },
+    kaidohouse: {
+        buttonId: 'updateKaidoHouseBtn',
+        endpoint: '/api/update-kaidohouse',
+        label: '🔄 更新 Kaido House 产品',
+        runningText: '⏳ Kaido House 更新中...',
+        startText: '🚀 Kaido House 更新已开始，请耐心等待...'
     }
 };
 

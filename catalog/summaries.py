@@ -146,8 +146,6 @@ def format_poprace_update_summary():
         f"最终 POP RACE 数量：{summary.get('final_poprace_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
     ]
     return "\n".join(lines)
-<<<<<<< Updated upstream
-=======
 
 
 def format_gcd_update_summary():
@@ -258,4 +256,70 @@ def format_trendshobby_update_summary():
         f"最终 TH 数量：{summary.get('final_trendshobby_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
     ]
     return "\n".join(lines)
->>>>>>> Stashed changes
+
+
+def format_minichamps_update_summary():
+    summary = load_update_summary(SUMMARY_PATHS["minichamps"])
+    if not summary:
+        return "✅ 全部更新完成！请刷新页面查看。"
+
+    max_products = summary.get("max_products", "all")
+    scope_text = "全量抓取" if max_products == "all" else f"抓取上限：{max_products} 个"
+    lines = [
+        "✅ MINICHAMPS 产品更新完成！请刷新页面查看最新数据。",
+        f"来源：CK-Modelcars 索引，候选 MINICHAMPS：{summary.get('candidate_count', 0)} 个",
+        f"{scope_text}，目标：{summary.get('target_count', summary.get('max_products', 0))} 个，成功：{summary.get('fetched_count', 0)} 个",
+        f"原 MINICHAMPS 数量：{summary.get('original_minichamps_count', 0)} 个",
+        f"新增：{summary.get('added_count', 0)} 个，更新：{summary.get('updated_count', 0)} 个，未变：{summary.get('unchanged_count', 0)} 个",
+        f"官网未返回但已保留：{summary.get('preserved_count', 0)} 个",
+        f"详情失败：{summary.get('detail_failed_count', 0)} 个",
+        f"图片成功：{summary.get('image_success_count', 0)} 个，缺图：{summary.get('image_failed_count', 0)} 个",
+        f"每个 MINICHAMPS 产品最多保留：{summary.get('max_images_per_product', 4)} 张图",
+        f"最终 MINICHAMPS 数量：{summary.get('final_minichamps_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
+    ]
+    if summary.get("duplicate_count", 0):
+        lines.insert(6, f"跳过重复官网产品：{summary.get('duplicate_count', 0)} 个")
+    return "\n".join(lines)
+
+
+def format_kiloworks_update_summary():
+    summary = load_update_summary(SUMMARY_PATHS["kiloworks"])
+    if not summary:
+        return "✅ 全部更新完成！请刷新页面查看。"
+
+    lines = [
+        "✅ Kilo Works 产品更新完成！请刷新页面查看最新数据。",
+        f"来源：3000toys Kilo Works，列表产品：{summary.get('list_count', 0)} 个",
+        f"实际抓取：{summary.get('fetched_count', 0)} 个",
+        f"原 Kilo Works 数量：{summary.get('original_kiloworks_count', 0)} 个",
+        f"新增：{summary.get('added_count', 0)} 个，更新：{summary.get('updated_count', 0)} 个，未变：{summary.get('unchanged_count', 0)} 个",
+        f"官网未返回但已保留：{summary.get('preserved_count', 0)} 个",
+        f"详情失败：{summary.get('detail_failed_count', 0)} 个",
+        f"图片成功：{summary.get('image_success_count', 0)} 个，缺图：{summary.get('image_failed_count', 0)} 个",
+        f"每个 Kilo Works 产品最多保留：{summary.get('max_images_per_product', 4)} 张图",
+        f"最终 Kilo Works 数量：{summary.get('final_kiloworks_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
+    ]
+    if summary.get("duplicate_count", 0):
+        lines.insert(6, f"跳过重复产品：{summary.get('duplicate_count', 0)} 个")
+    return "\n".join(lines)
+
+
+def format_kaidohouse_update_summary():
+    summary = load_update_summary(SUMMARY_PATHS["kaidohouse"])
+    if not summary:
+        return "✅ 全部更新完成！请刷新页面查看。"
+
+    lines = [
+        "✅ Kaido House 产品更新完成！请刷新页面查看最新数据。",
+        f"官网集合：{summary.get('collection', 'diecast')}，分页：{summary.get('page_count', 0)} 页",
+        f"官网抓取：{summary.get('fetched_count', 0)} 个车模产品",
+        f"原 Kaido House 数量：{summary.get('original_kaidohouse_count', 0)} 个",
+        f"新增：{summary.get('added_count', 0)} 个，更新：{summary.get('updated_count', 0)} 个，未变：{summary.get('unchanged_count', 0)} 个",
+        f"官网未返回但已保留：{summary.get('preserved_count', 0)} 个",
+        f"图片成功：{summary.get('image_success_count', 0)} 个，缺图：{summary.get('image_failed_count', 0)} 个",
+        f"每个 Kaido House 产品最多保留：{summary.get('max_images_per_product', 4)} 张图",
+        f"最终 Kaido House 数量：{summary.get('final_kaidohouse_count', 0)} 个，总产品数：{summary.get('total_products', 0)} 个",
+    ]
+    if summary.get("duplicate_count", 0):
+        lines.insert(6, f"跳过重复官网产品：{summary.get('duplicate_count', 0)} 个")
+    return "\n".join(lines)
